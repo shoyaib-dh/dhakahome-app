@@ -730,11 +730,14 @@ function findBookingConflict(flatId, checkIn, checkOut, excludeGuestId){
 function guestDays(g){ return Math.max(1, daysBetween(g.checkIn, g.checkOut)); }
 function guestTotalRent(g){
   const days = guestDays(g);
+  let base;
   if(g.rentType==='monthly'){
     const months = days/30;
-    return Math.round((Number(g.monthlyRate)||0) * months);
+    base = Math.round((Number(g.monthlyRate)||0) * months);
+  } else {
+    base = days * Number(g.perDayRate||0);
   }
-  return days * Number(g.perDayRate||0);
+  return base + Number(g.serviceCharge||0);
 }
 function guestRateLabel(g){
   if(g.rentType==='monthly') return `Tk ${fmt(g.monthlyRate)} / month`;
@@ -1560,6 +1563,7 @@ function openGuestForm(id){
       <div class="field-row">
         <div class="field" id="g_dailyField"><label>Rate per Day (Tk)</label><input id="g_rate" type="number" value="${g?g.perDayRate||'':''}"></div>
         <div class="field" id="g_monthlyField"><label>Monthly Rent (Tk)</label><input id="g_monthlyRate" type="number" value="${g?g.monthlyRate||'':''}"></div>
+        <div class="field"><label>Service Charge (Tk)</label><input id="g_service" type="number" value="${g?g.serviceCharge||'':''}" placeholder="e.g. 500"></div>
       </div>
       <div class="field"><label>Advance Paid (Tk)</label><input id="g_advance" type="number" value="${g?g.advancePaid||0:0}"></div>
       <div class="field"><label>Notes</label><textarea id="g_notes" rows="2">${g?esc(g.notes||''):''}</textarea></div>
@@ -1595,6 +1599,7 @@ function saveGuest(id){
   const rentType = document.getElementById('g_rentType').value;
   const rate = Number(document.getElementById('g_rate').value)||0;
   const monthlyRate = Number(document.getElementById('g_monthlyRate').value)||0;
+  const serviceCharge = Number(document.getElementById('g_service').value)||0;
   const flatId = document.getElementById('g_flat').value;
   if(!name || !phone || !cin || !cout){ toast('Please fill all required (*) fields','err'); return; }
   if(rentType==='daily' && !rate){ toast('Please enter the rate per day','err'); return; }
@@ -1617,6 +1622,7 @@ function saveGuest(id){
     rentType,
     perDayRate: rate,
     monthlyRate: monthlyRate,
+    serviceCharge: serviceCharge,
     advancePaid: Number(document.getElementById('g_advance').value)||0,
     notes: document.getElementById('g_notes').value.trim(),
   };
@@ -1670,7 +1676,8 @@ function openReceipt(id){
         <table class="rtable">
           <thead><tr><th>Particulars</th><th style="text-align:right;">Amount (Tk)</th></tr></thead>
           <tbody>
-            <tr><td>${g.rentType==='monthly'?`Rent (${(days/30).toFixed(1)} months x ${guestRateLabel(g)})`:`Rent (${days} days x Tk ${fmt(g.perDayRate)})`}</td><td style="text-align:right;">Tk ${fmt(total)}</td></tr>
+            <tr><td>${g.rentType==='monthly'?`Rent (${(days/30).toFixed(1)} months x ${guestRateLabel(g)})`:`Rent (${days} days x Tk ${fmt(g.perDayRate)})`}</td><td style="text-align:right;">Tk ${fmt(g.rentType==='monthly'?Math.round((Number(g.monthlyRate)||0)*(days/30)):days*Number(g.perDayRate||0))}</td></tr>
+            ${Number(g.serviceCharge||0)>0? `<tr><td>Service Charge</td><td style="text-align:right;">Tk ${fmt(g.serviceCharge)}</td></tr>` : ''}
             <tr><td>Total Received (Advance + Payments)</td><td style="text-align:right;">− Tk ${fmt(guestTotalReceived(g))}</td></tr>
           </tbody>
         </table>
@@ -1812,8 +1819,13 @@ function openGuestLedger(id){
 }
 function deleteGuestPayment(paymentId, guestId){
   if(!confirm('Delete this payment record?')) return;
+  const p = DB.guestPayments.find(x=>x.id===paymentId);
+  // If this payment auto-created a linked rent entry (advance->rent adjustment), remove that entry too.
+  if(p && p.linkedEntryId){
+    DB.entries = DB.entries.filter(e=>e.id!==p.linkedEntryId);
+  }
   DB.guestPayments = DB.guestPayments.filter(x=>x.id!==paymentId);
-  persist('guestPayments'); openGuestLedger(guestId); toast('Payment deleted','err');
+  persist('guestPayments'); persist('entries'); openGuestLedger(guestId); toast('Payment deleted','err');
 }
 function openAddGuestPayment(guestId){
   const g = DB.guests.find(x=>x.id===guestId); if(!g) return;
@@ -1841,6 +1853,7 @@ function openAddGuestPayment(guestId){
 }
 function saveGuestPayment(guestId){
   const g = DB.guests.find(x=>x.id===guestId); if(!g) return;
+  const f = DB.flats.find(x=>x.id===g.flatId);
   const date = document.getElementById('gp_date').value;
   const type = document.getElementById('gp_type').value;
   const amount = Number(document.getElementById('gp_amount').value);
@@ -1851,8 +1864,24 @@ function saveGuestPayment(guestId){
     if(amount > avail){ toast(`Only Tk ${fmt(avail)} of advance is available to adjust`,'err'); return; }
   }
   const rec = {id:uid(), guestId, date, type, amount, note};
+  // When advance is adjusted against rent, automatically create a matching
+  // Income & Expense Entry (type: rent) for this guest's flat so it flows
+  // straight into Income & Expense Entry / House Report / Owner Report.
+  if(type==='adjustment' && f){
+    const entryId = uid();
+    DB.entries.push({
+      id: entryId,
+      flatId: f.id,
+      date,
+      month: date.slice(0,7),
+      particular: note || `Advance adjusted to rent — ${g.name}`,
+      type: 'rent',
+      amount
+    });
+    rec.linkedEntryId = entryId;
+  }
   DB.guestPayments.push(rec);
-  persist('guestPayments'); closeModal(); toast('Payment saved');
+  persist('guestPayments'); persist('entries'); closeModal(); toast('Payment saved');
   openGuestPaymentReceipt(rec.id);
 }
 function openGuestPaymentReceipt(paymentId){
