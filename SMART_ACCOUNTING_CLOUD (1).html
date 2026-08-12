@@ -345,11 +345,13 @@ const db = firebase.firestore();
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
   /* user management panel */
-  .user-badge {
-    display:inline-flex;align-items:center;gap:6px;background:#F3F2EF;
-    border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;
+  .user-avatar {
+    display:inline-flex;align-items:center;justify-content:center;
+    width:38px;height:38px;border-radius:50%;background:var(--red,#C21F26);
+    color:#fff;font-weight:700;font-size:15px;cursor:pointer;flex-shrink:0;
+    box-shadow:0 1px 3px rgba(0,0,0,.15);
   }
-  .user-badge:hover { background:#E8E7E4; }
+  .user-avatar:hover { filter:brightness(1.08); }
   .role-admin { color:#C21F26; }
   .role-user { color:#1D5FBF; }
   .offline-banner {
@@ -406,16 +408,12 @@ const db = firebase.firestore();
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <div class="user-badge" id="userBadge" onclick="showUserMenu()">
-          <span>👤</span>
-          <span id="currentUserLabel">—</span>
-          <span id="currentUserRole" class="role-admin"></span>
+        <div class="user-avatar" id="userBadge" onclick="showUserMenu()" title="Profile & settings">
+          <span id="userAvatarInitial">👤</span>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="exportBackup()">⬇ Export</button>
-        <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
-          ⬆ Import <input type="file" accept=".json" onchange="importBackup(event)" style="display:none;">
-        </label>
-        <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:#C21F26;">🚪 Log Out</button>
+        <!-- kept for other code that reads these by id; hidden from view -->
+        <span id="currentUserLabel" style="display:none;"></span>
+        <span id="currentUserRole" style="display:none;"></span>
       </div>
     </div>
     <div class="content" id="content"></div>
@@ -609,6 +607,8 @@ function loginSuccess(user){
   const roleLabels = {admin:'👑 Admin', user:'👤 User', cleaner:'🧹 Cleaner', viewer:'👁 Viewer'};
   document.getElementById('currentUserRole').textContent=roleLabels[user.role]||'👤 User';
   document.getElementById('currentUserRole').className=user.role==='admin'?'role-admin':'role-user';
+  const avatarEl = document.getElementById('userAvatarInitial');
+  if(avatarEl) avatarEl.textContent = (user.username||'?').trim().charAt(0).toUpperCase();
   startCloudSync(user.username);
   seedIfEmpty();
   renderNav();
