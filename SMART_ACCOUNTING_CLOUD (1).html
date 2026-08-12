@@ -12,8 +12,7 @@
 
 <script>
 // ============================================================
-//  🔥 FIREBASE CONFIG — আপনার Firebase Project-এর config এখানে বসান
-//  নিচের ধাপগুলো অনুসরণ করুন (Setup Guide দেখুন)
+//  🔥 FIREBASE CONFIG
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAyhLZ3Sl0239vuSnfQkYbF35ztIxauXJI",
@@ -51,6 +50,8 @@ const db = firebase.firestore();
     --radius:10px;
     --shadow: 0 1px 2px rgba(20,20,22,.04), 0 6px 20px rgba(20,20,22,.05);
   }
+  
+  /* Animations & General Styles */
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -69,6 +70,8 @@ const db = firebase.firestore();
     width:250px; flex-shrink:0; background:var(--black);
     color:#EDEDEE; display:flex; flex-direction:column;
     position:sticky; top:0; height:100vh;
+    transition: transform 0.3s ease-in-out;
+    z-index: 99;
   }
   .brand{
     padding:22px 20px 18px; border-bottom:1px solid #2A2A2D;
@@ -85,7 +88,7 @@ const db = firebase.firestore();
   .nav button{
     all:unset; cursor:pointer; display:flex; align-items:center; gap:10px;
     padding:10px 12px;border-radius:8px;font-size:14px;color:#C7C7CC;font-weight:500;
-    transition:background .15s, color .15s;
+    transition:background .2s ease, color .2s ease;
   }
   .nav button svg{width:17px;height:17px;flex-shrink:0;opacity:.85;}
   .nav button:hover{background:#1F1F22;color:#fff;}
@@ -94,7 +97,15 @@ const db = firebase.firestore();
 
   .sidebar-foot{padding:14px 18px;border-top:1px solid #2A2A2D;font-size:11px;color:#78787D;}
 
-  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .main{flex:1; min-width:0; display:flex; flex-direction:column; position:relative;}
+  
+  /* Mobile Overlay */
+  .mobile-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(20,20,22,0.5); 
+    z-index: 98; opacity: 0; transition: opacity 0.3s ease;
+  }
+  .mobile-overlay.show { display: block; opacity: 1; }
+
   .topbar{
     background:var(--white);border-bottom:1px solid var(--line);
     padding:16px 28px;display:flex;align-items:center;justify-content:space-between;
@@ -108,7 +119,7 @@ const db = firebase.firestore();
   .btn{
     all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
     padding:9px 16px;border-radius:8px;font-size:13.5px;font-weight:600;
-    transition:transform .06s, background .15s, box-shadow .15s;
+    transition:transform .1s ease, background .2s ease, box-shadow .2s ease;
     font-family:Arial, Calibri, sans-serif;
   }
   .btn:active{transform:scale(.97);}
@@ -121,12 +132,13 @@ const db = firebase.firestore();
   .btn-sm{padding:6px 11px;font-size:12.5px;border-radius:7px;}
   .btn-danger{background:#fff;color:var(--red);border:1px solid var(--red-light);}
   .btn-danger:hover{background:var(--red-light);}
-  .icon-btn{all:unset;cursor:pointer;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;color:var(--ink-soft);}
+  .icon-btn{all:unset;cursor:pointer;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;color:var(--ink-soft); transition:background 0.2s, color 0.2s;}
   .icon-btn:hover{background:#F0EFEC;color:var(--ink);}
 
   /* ---------- Cards / KPIs ---------- */
   .grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px;}
-  .kpi{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .kpi{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden; transition:transform 0.2s ease;}
+  .kpi:hover { transform: translateY(-2px); }
   .kpi .label{font-size:12px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
   .kpi .val{font-family:'Poppins';font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-.5px;}
   .kpi .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--red);}
@@ -143,16 +155,22 @@ const db = firebase.firestore();
   table{width:100%;border-collapse:collapse;font-size:13.5px;}
   th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-soft);font-weight:700;padding:9px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap;}
   td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr{transition: background 0.15s ease;}
   tbody tr:hover{background:#FAF9F6;}
   .tbl-wrap{overflow-x:auto;}
   .num{font-family:'Courier New',monospace;font-variant-numeric:tabular-nums;text-align:right;}
   tfoot td{font-weight:700;border-top:2px solid var(--black);border-bottom:none;background:#FAF9F6;}
 
-  /* ---------- Badges ---------- */
-  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:20px;font-size:12px;font-weight:700;}
+  /* ---------- Badges & Pulse Animation ---------- */
+  @keyframes pulseDot {
+    0% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.7); }
+    70% { box-shadow: 0 0 0 5px rgba(30, 142, 62, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
+  }
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:20px;font-size:12px;font-weight:700; transition:all 0.2s ease;}
   .badge .dot{width:7px;height:7px;border-radius:50%;}
   .badge-avail{background:var(--green-bg);color:var(--green);}
-  .badge-avail .dot{background:var(--green);}
+  .badge-avail .dot{background:var(--green); animation: pulseDot 2s infinite;}
   .badge-unavail{background:var(--red-light);color:var(--red-dark);}
   .badge-unavail .dot{background:var(--red);}
   .badge-clean-ok{background:var(--green-bg);color:var(--green);}
@@ -164,6 +182,7 @@ const db = firebase.firestore();
   input,select,textarea{
     width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;
     font-size:13.5px;font-family:Arial, Calibri, sans-serif;background:#fff;color:var(--ink);
+    transition:border-color 0.2s, box-shadow 0.2s;
   }
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px var(--red-light);}
   .field{margin-bottom:13px;}
@@ -172,17 +191,15 @@ const db = firebase.firestore();
   .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
 
   /* ---------- Modal ---------- */
-  .overlay{position:fixed;inset:0;background:rgba(20,20,22,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:100;overflow-y:auto;}
-  .overlay.show{display:flex;}
-  .modal{background:#fff;border-radius:14px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop .15s ease;}
+  .overlay{position:fixed;inset:0;background:rgba(20,20,22,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:100;overflow-y:auto; opacity:0; transition:opacity 0.2s ease;}
+  .overlay.show{display:flex; opacity:1;}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.3); transform:translateY(15px); transition:transform 0.3s ease;}
+  .overlay.show .modal{transform:translateY(0);}
   .modal.wide{max-width:800px;}
-  @keyframes pop{from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1}}
   .modal-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
   .modal-head h3{margin:0;font-size:16px;font-weight:700;}
   .modal-body{padding:20px 22px;max-height:70vh;overflow-y:auto;}
   .modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;}
-  .close-x{all:unset;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);border-radius:6px;}
-  .close-x:hover{background:#F0EFEC;}
 
   .empty{text-align:center;padding:50px 20px;color:var(--ink-soft);}
   .empty svg{opacity:.35;margin-bottom:10px;}
@@ -222,13 +239,23 @@ const db = firebase.firestore();
   .sign{margin-top:40px;display:flex;justify-content:space-between;}
   .sign .ln{width:180px;border-top:1px solid #999;padding-top:6px;font-size:11.5px;color:var(--ink-soft);text-align:center;}
 
-  /* ---------- PRINT: bordered, ruled tables with margins ---------- */
+  /* ---------- PRINT: Fixed blank and duplicate pages ---------- */
   @media print{
-    @page{ margin: 14mm 12mm; }
+    @page{ margin: 14mm 12mm; size: auto; }
     body *{visibility:hidden;}
+    /* Ensure body height auto to prevent extra blank pages */
+    html, body { height: auto; margin: 0; padding: 0; background: #fff; }
+    
     #printArea, #printArea *{visibility:visible;}
-    #printArea{position:absolute;left:0;top:0;width:100%;}
+    #printArea{position:absolute;left:0;top:0;width:100%; page-break-inside: avoid; }
+    
+    /* Hide scrollbars & overlays */
+    .overlay.show { display: block !important; position: absolute; background: none; inset: auto; padding: 0; }
+    .modal { box-shadow: none; transform: none; max-width: 100%; width: 100%; margin: 0; padding: 0; }
+    .modal-head, .modal-foot { display: none !important; }
+    .modal-body { padding: 0; max-height: none; overflow: visible; }
     .no-print{display:none !important;}
+
     #printArea table{width:100%;border-collapse:collapse;font-family:Arial, Calibri, sans-serif;}
     #printArea th, #printArea td{
       border:1px solid #333 !important;
@@ -241,9 +268,10 @@ const db = firebase.firestore();
     #printArea .rhead{border-bottom:3px solid #C21F26 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
   }
 
+  /* Responsive & Mobile Menu */
   @media (max-width:900px){
-    .sidebar{position:fixed;left:-260px;transition:left .2s;z-index:99;}
-    .sidebar.open{left:0;}
+    .sidebar{position:fixed;left:-260px;transition:transform .3s ease-in-out;z-index:99;}
+    .sidebar.open{transform: translateX(260px);}
     .field-row,.field-row3{grid-template-columns:1fr;}
     .rgrid{grid-template-columns:1fr;}
   }
@@ -259,7 +287,10 @@ const db = firebase.firestore();
   .login-box {
     background:#fff; border-radius:16px; padding:36px 32px; width:100%; max-width:400px;
     box-shadow:0 24px 80px rgba(0,0,0,.5);
+    animation: fadeUp 0.4s ease forwards;
   }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  
   .login-logo { text-align:center; margin-bottom:24px; }
   .login-logo .mark {
     display:inline-flex;align-items:center;justify-content:center;
@@ -273,11 +304,13 @@ const db = firebase.firestore();
   .login-field input {
     width:100%;padding:10px 12px;border:1px solid #E7E5E2;border-radius:8px;
     font-size:14px;outline:none;box-sizing:border-box;
+    transition:border-color 0.2s, box-shadow 0.2s;
   }
   .login-field input:focus { border-color:#C21F26;box-shadow:0 0 0 3px #FDEBEC; }
   .login-btn {
     width:100%;padding:11px;background:#C21F26;color:#fff;border:none;border-radius:8px;
     font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;font-family:Arial,sans-serif;
+    transition: background 0.2s;
   }
   .login-btn:hover { background:#8F1519; }
   .login-err { color:#C21F26;font-size:12.5px;margin-top:8px;text-align:center;display:none; }
@@ -287,7 +320,7 @@ const db = firebase.firestore();
   /* sync status indicator */
   #syncStatus {
     display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:#9C9CA1;padding:4px 8px;
-    border-radius:20px;background:#F3F2EF;
+    border-radius:20px;background:#F3F2EF; transition: all 0.3s ease;
   }
   #syncStatus .dot { width:7px;height:7px;border-radius:50%;background:#9C9CA1; }
   #syncStatus.syncing .dot { background:#B8860B;animation:pulse 1s infinite; }
@@ -299,10 +332,14 @@ const db = firebase.firestore();
   .user-badge {
     display:inline-flex;align-items:center;gap:6px;background:#F3F2EF;
     border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;
+    transition: background 0.2s;
   }
   .user-badge:hover { background:#E8E7E4; }
   .role-admin { color:#C21F26; }
   .role-user { color:#1D5FBF; }
+  .role-cleaner { color:#B8860B; }
+  .role-viewer { color:#1E8E3E; }
+  
   .offline-banner {
     background:#B8860B;color:#fff;text-align:center;padding:8px;font-size:13px;font-weight:600;
     display:none;
@@ -313,7 +350,7 @@ const db = firebase.firestore();
 <body>
 
 <!-- OFFLINE BANNER -->
-<div class="offline-banner" id="offlineBanner">⚠ আপনি এখন অফলাইনে আছেন — ডেটা লোকালি সেভ হচ্ছে, অনলাইনে আসলে sync হবে।</div>
+<div class="offline-banner" id="offlineBanner">⚠ You are currently offline — data is saved locally and will sync when online.</div>
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen">
@@ -324,10 +361,10 @@ const db = firebase.firestore();
       <div class="brand-sub">Smart Accounting</div>
     </div>
     <div id="loginForm">
-      <div class="login-field"><label>Username</label><input type="text" id="loginUser" placeholder="shoyaibaccounting" autocomplete="username"></div>
+      <div class="login-field"><label>Username</label><input type="text" id="loginUser" placeholder="Username" autocomplete="username"></div>
       <div class="login-field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
       <div class="login-err" id="loginErr"></div>
-      <button class="login-btn" onclick="doLogin()">লগিন করুন</button>
+      <button class="login-btn" onclick="doLogin()">Login</button>
     </div>
     <div class="login-footer">DhakaHome USA Ltd. &copy; 2026</div>
   </div>
@@ -335,6 +372,7 @@ const db = firebase.firestore();
 
 <!-- MAIN APP (hidden until logged in) -->
 <div id="app" style="display:none; flex-direction:row;">
+  <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMenu()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="mark">DH</div>
@@ -348,7 +386,7 @@ const db = firebase.firestore();
   <div class="main">
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:12px;">
-        <button class="icon-btn menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <button class="icon-btn menu-btn" onclick="toggleMenu()">☰</button>
         <div>
           <h1 id="pageTitle">Dashboard</h1>
           <div class="sub" id="pageSub">Overview</div>
@@ -360,11 +398,11 @@ const db = firebase.firestore();
           <span id="currentUserLabel">—</span>
           <span id="currentUserRole" class="role-admin"></span>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="exportBackup()">⬇ Export</button>
-        <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
+        <button class="btn btn-ghost btn-sm no-viewer" onclick="exportBackup()">⬇ Export</button>
+        <label class="btn btn-ghost btn-sm no-viewer" style="cursor:pointer;">
           ⬆ Import <input type="file" accept=".json" onchange="importBackup(event)" style="display:none;">
         </label>
-        <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:#C21F26;">🚪 লগআউট</button>
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:#C21F26;">🚪 Logout</button>
       </div>
     </div>
     <div class="content" id="content"></div>
@@ -376,13 +414,8 @@ const db = firebase.firestore();
 
 <script>
 /* =================================================================
-   DhakaHome Smart Accounting — Firebase Cloud Sync + Multi-User
-   Admin: shoyaibaccounting / DH@2026
+   DhakaHome Smart Accounting — Cloud Sync + Multi-User Roles
    ================================================================= */
-
-// ====================== USER ACCOUNTS (Firestore-এ সংরক্ষিত) ======================
-// Admin শুধুমাত্র নতুন user তৈরি করতে পারবে Settings থেকে
-// Users: { username, passwordHash, role: 'admin'|'user', createdAt, active }
 
 const DEFAULT_ADMIN = {
   username: 'shoyaibaccounting',
@@ -416,7 +449,6 @@ let DB = {
   }
 };
 
-// Load from local first (instant load)
 const localData = loadLocal();
 if(localData){ Object.assign(DB, localData); }
 
@@ -424,20 +456,18 @@ let firestoreUnsubscribe = null;
 let syncTimeout = null;
 let pendingSync = false;
 
-// ====================== SYNC STATUS ======================
 function setSyncStatus(state, label){
   const el = document.getElementById('syncStatus');
   const lbl = document.getElementById('syncLabel');
   if(!el) return;
-  el.className = 'sidebar-foot'; // reset
+  el.className = 'sidebar-foot';
   el.innerHTML = `<span class="dot"></span><span id="syncLabel">${label}</span>`;
   el.classList.add(state);
 }
 
-// ====================== FIRESTORE SYNC ======================
 function startCloudSync(userId){
   if(firestoreUnsubscribe) firestoreUnsubscribe();
-  setSyncStatus('syncing','সংযুক্ত হচ্ছে...');
+  setSyncStatus('syncing','Connecting...');
   const docRef = db.collection('accounting_data').doc('main_db');
   firestoreUnsubscribe = docRef.onSnapshot(snap=>{
     if(snap.exists){
@@ -447,9 +477,8 @@ function startCloudSync(userId){
       if(currentPage) render();
       setSyncStatus('synced','Cloud ✓ Synced');
     } else {
-      // First time — push local data
       docRef.set(DB).catch(e=>console.error(e));
-      setSyncStatus('synced','Cloud ✓ নতুন');
+      setSyncStatus('synced','Cloud ✓ New');
     }
   }, err=>{
     console.error('Firestore error:', err);
@@ -458,9 +487,6 @@ function startCloudSync(userId){
 }
 
 function persist(part){
-  if(part){
-    // already updated in memory, just sync
-  }
   saveLocal(DB);
   pushToCloud();
 }
@@ -468,7 +494,7 @@ function persist(part){
 let pushTimer = null;
 function pushToCloud(){
   clearTimeout(pushTimer);
-  setSyncStatus('syncing','সেভ হচ্ছে...');
+  setSyncStatus('syncing','Saving...');
   pushTimer = setTimeout(async ()=>{
     try{
       await db.collection('accounting_data').doc('main_db').set(DB);
@@ -491,13 +517,18 @@ window.addEventListener('offline',()=>{
   setSyncStatus('err','Offline mode');
 });
 
-// ====================== USER MANAGEMENT (Firestore) ======================
+// ====================== MENU TOGGLE (Mobile) ======================
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('show');
+}
+
+// ====================== USER MANAGEMENT ======================
 async function loadUsers(){
   try{
     const snap = await db.collection('dh_users').get();
     const users = [];
     snap.forEach(doc=>users.push({id:doc.id,...doc.data()}));
-    // Ensure admin exists
     if(!users.find(u=>u.username===DEFAULT_ADMIN.username)){
       const hash = await hashPassword(DEFAULT_ADMIN.password);
       await db.collection('dh_users').doc(DEFAULT_ADMIN.username).set({
@@ -508,7 +539,6 @@ async function loadUsers(){
     }
     return users;
   }catch(e){
-    // offline fallback — check local users
     const local = localStorage.getItem('dh_users');
     return local ? JSON.parse(local) : [];
   }
@@ -519,33 +549,29 @@ async function doLogin(){
   const pass = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginErr');
   errEl.classList.remove('show');
-  if(!uname||!pass){ showLoginErr('Username ও Password দিন'); return; }
+  if(!uname||!pass){ showLoginErr('Enter Username & Password'); return; }
 
   const btn = document.querySelector('.login-btn');
-  btn.textContent='যাচাই হচ্ছে...'; btn.disabled=true;
+  btn.textContent='Verifying...'; btn.disabled=true;
 
   try{
     const hash = await hashPassword(pass);
-    // Check admin default (also works offline first time)
     if(uname===DEFAULT_ADMIN.username && pass===DEFAULT_ADMIN.password){
       loginSuccess({username:uname, role:'admin'});
       return;
     }
-    // Check Firestore users
     const doc = await db.collection('dh_users').doc(uname).get();
-    if(!doc.exists){ showLoginErr('User পাওয়া যায়নি'); btn.textContent='লগিন করুন'; btn.disabled=false; return; }
+    if(!doc.exists){ showLoginErr('User not found'); btn.textContent='Login'; btn.disabled=false; return; }
     const userData = doc.data();
-    if(!userData.active){ showLoginErr('এই account টি inactive'); btn.textContent='লগিন করুন'; btn.disabled=false; return; }
-    if(userData.passwordHash !== hash){ showLoginErr('Password ভুল হয়েছে'); btn.textContent='লগিন করুন'; btn.disabled=false; return; }
+    if(!userData.active){ showLoginErr('Account inactive'); btn.textContent='Login'; btn.disabled=false; return; }
+    if(userData.passwordHash !== hash){ showLoginErr('Incorrect Password'); btn.textContent='Login'; btn.disabled=false; return; }
     loginSuccess({username:uname, role:userData.role||'user'});
   }catch(e){
-    // Offline fallback
-    const localUsers = localStorage.getItem('dh_users');
     if(uname===DEFAULT_ADMIN.username && pass===DEFAULT_ADMIN.password){
       loginSuccess({username:uname, role:'admin'}); return;
     }
-    showLoginErr('লগিন হয়নি — ইন্টারনেট সংযোগ চেক করুন');
-    btn.textContent='লগিন করুন'; btn.disabled=false;
+    showLoginErr('Login failed — Check internet connection');
+    btn.textContent='Login'; btn.disabled=false;
   }
 }
 
@@ -555,12 +581,27 @@ function loginSuccess(user){
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').style.display='flex';
   document.getElementById('currentUserLabel').textContent=user.username;
-  document.getElementById('currentUserRole').textContent=user.role==='admin'?'👑 Admin':'👤 User';
-  document.getElementById('currentUserRole').className=user.role==='admin'?'role-admin':'role-user';
+  
+  let roleText = '👤 User'; let roleClass = 'role-user';
+  if(user.role==='admin') { roleText = '👑 Admin'; roleClass = 'role-admin'; }
+  else if(user.role==='cleaner') { roleText = '🧹 Cleaner'; roleClass = 'role-cleaner'; }
+  else if(user.role==='viewer') { roleText = '👁️ Viewer'; roleClass = 'role-viewer'; }
+  
+  document.getElementById('currentUserRole').textContent = roleText;
+  document.getElementById('currentUserRole').className = roleClass;
+  
+  // Hide import/export if viewer
+  document.querySelectorAll('.no-viewer').forEach(el => {
+    el.style.display = (user.role === 'viewer' || user.role === 'cleaner') ? 'none' : 'inline-flex';
+  });
+
   startCloudSync(user.username);
   seedIfEmpty();
   renderNav();
-  goTo('dashboard');
+  
+  // Default routing based on role
+  if(user.role === 'cleaner') goTo('cleaning');
+  else goTo('dashboard');
 }
 
 function showLoginErr(msg){
@@ -569,15 +610,16 @@ function showLoginErr(msg){
 }
 
 function doLogout(){
-  if(!confirm('লগআউট করবেন?')) return;
+  if(!confirm('Logout from application?')) return;
   if(firestoreUnsubscribe) firestoreUnsubscribe();
   currentUser=null;
   localStorage.removeItem('dh_session');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('app').style.display='none';
+  document.querySelector('.login-btn').textContent = 'Login';
+  document.querySelector('.login-btn').disabled = false;
 }
 
-// Auto login from session (within 8 hours)
 function checkSession(){
   try{
     const s = localStorage.getItem('dh_session');
@@ -588,33 +630,38 @@ function checkSession(){
   return false;
 }
 
-// ====================== USER MANAGEMENT UI ======================
+// User Menu Options
 function showUserMenu(){
   if(!currentUser) return;
   const isAdmin = currentUser.role==='admin';
   openModal(`
-    <div class="modal-head"><h3>👤 User Menu</h3><button class="close-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-head"><h3>👤 User Management</h3><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div style="background:#FAF9F6;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
         <div style="font-weight:700;">${esc(currentUser.username)}</div>
-        <div class="hint">${currentUser.role==='admin'?'👑 Administrator':'👤 Standard User'}</div>
+        <div class="hint">Role: ${currentUser.role}</div>
       </div>
       ${isAdmin ? `
       <div style="margin-bottom:14px;">
-        <h4 style="margin:0 0 10px;font-size:13.5px;">ব্যবহারকারী তৈরি করুন</h4>
-        <div class="field"><label>Username</label><input id="nu_user" placeholder="নতুন username"></div>
+        <h4 style="margin:0 0 10px;font-size:13.5px;">Create New User</h4>
+        <div class="field"><label>Username</label><input id="nu_user" placeholder="New username"></div>
         <div class="field"><label>Password</label><input type="password" id="nu_pass" placeholder="Password"></div>
         <div class="field"><label>Role</label>
-          <select id="nu_role"><option value="user">👤 Standard User</option><option value="admin">👑 Admin</option></select>
+          <select id="nu_role">
+            <option value="user">👤 Standard User</option>
+            <option value="admin">👑 Admin</option>
+            <option value="cleaner">🧹 Cleaner (Can only log cleaning)</option>
+            <option value="viewer">👁️ Viewer (View properties & status only)</option>
+          </select>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="createUser()">✚ User তৈরি করুন</button>
+        <button class="btn btn-primary btn-sm" onclick="createUser()">✚ Create User</button>
       </div>
       <div>
-        <h4 style="margin:0 0 10px;font-size:13.5px;">বিদ্যমান Users</h4>
-        <div id="userListArea"><div class="hint">লোড হচ্ছে...</div></div>
+        <h4 style="margin:0 0 10px;font-size:13.5px;">Existing Users</h4>
+        <div id="userListArea"><div class="hint">Loading...</div></div>
       </div>` : ''}
       <div style="margin-top:14px;border-top:1px solid #E7E5E2;padding-top:14px;">
-        <button class="btn btn-danger btn-sm" onclick="doLogout();closeModal()">🚪 লগআউট</button>
+        <button class="btn btn-danger btn-sm" onclick="doLogout();closeModal()">🚪 Logout</button>
       </div>
     </div>
   `);
@@ -628,17 +675,17 @@ async function loadAndShowUsers(){
     const snap = await db.collection('dh_users').get();
     const users = [];
     snap.forEach(doc=>users.push({id:doc.id,...doc.data()}));
-    area.innerHTML = users.length===0 ? '<div class="hint">কোনো user নেই</div>' :
+    area.innerHTML = users.length===0 ? '<div class="hint">No users found</div>' :
       `<div class="tbl-wrap"><table>
         <thead><tr><th>Username</th><th>Role</th><th>Status</th><th></th></tr></thead>
         <tbody>
         ${users.map(u=>`<tr>
           <td>${esc(u.username)}</td>
-          <td>${u.role==='admin'?'👑 Admin':'👤 User'}</td>
-          <td>${u.active!==false?'<span style="color:#1E8E3E;">✓ Active</span>':'<span style="color:#C21F26;">Inactive</span>'}</td>
+          <td style="text-transform:capitalize;">${u.role}</td>
+          <td>${u.active!==false?'<span style="color:#1E8E3E;">Active</span>':'<span style="color:#C21F26;">Inactive</span>'}</td>
           <td>
             ${u.username!=='shoyaibaccounting'?`
-            <button class="btn btn-sm btn-ghost" onclick="toggleUserActive('${u.username}',${!u.active})">${u.active!==false?'Deactivate':'Activate'}</button>
+            <button class="btn btn-sm btn-ghost" onclick="toggleUserActive('${u.username}',${!u.active})">${u.active!==false?'Disable':'Enable'}</button>
             <button class="btn btn-sm btn-danger" onclick="deleteUser('${u.username}')">Delete</button>
             `:'<span class="hint">Admin</span>'}
           </td>
@@ -646,7 +693,7 @@ async function loadAndShowUsers(){
         </tbody>
       </table></div>`;
   }catch(e){
-    area.innerHTML='<div class="hint" style="color:#C21F26;">লোড হয়নি — ইন্টারনেট চেক করুন</div>';
+    area.innerHTML='<div class="hint" style="color:#C21F26;">Failed to load. Check internet.</div>';
   }
 }
 
@@ -654,43 +701,30 @@ async function createUser(){
   const uname = document.getElementById('nu_user').value.trim();
   const pass = document.getElementById('nu_pass').value;
   const role = document.getElementById('nu_role').value;
-  if(!uname||!pass){ toast('Username ও Password দিন','err'); return; }
+  if(!uname||!pass){ toast('Enter Username & Password','err'); return; }
   try{
     const hash = await hashPassword(pass);
     await db.collection('dh_users').doc(uname).set({
       username:uname, passwordHash:hash, role, active:true, createdAt:new Date().toISOString()
     });
-    toast('User তৈরি হয়েছে: '+uname);
-    document.getElementById('nu_user').value='';
-    document.getElementById('nu_pass').value='';
+    toast('User created: '+uname);
+    document.getElementById('nu_user').value=''; document.getElementById('nu_pass').value='';
     loadAndShowUsers();
-  }catch(e){
-    toast('User তৈরি হয়নি: '+e.message,'err');
-  }
+  }catch(e){ toast('Error: '+e.message,'err'); }
 }
 
 async function toggleUserActive(uname, newState){
-  try{
-    await db.collection('dh_users').doc(uname).update({active:newState});
-    toast('Status updated');
-    loadAndShowUsers();
-  }catch(e){ toast('Error: '+e.message,'err'); }
+  try{ await db.collection('dh_users').doc(uname).update({active:newState}); toast('Status updated'); loadAndShowUsers(); }
+  catch(e){ toast('Error: '+e.message,'err'); }
 }
-
 async function deleteUser(uname){
-  if(!confirm(`"${uname}" user টি delete করবেন?`)) return;
-  try{
-    await db.collection('dh_users').doc(uname).delete();
-    toast('User deleted','err');
-    loadAndShowUsers();
-  }catch(e){ toast('Error: '+e.message,'err'); }
+  if(!confirm(`Delete user "${uname}"?`)) return;
+  try{ await db.collection('dh_users').doc(uname).delete(); toast('User deleted','err'); loadAndShowUsers(); }
+  catch(e){ toast('Error: '+e.message,'err'); }
 }
 
-// Login on Enter key
 document.addEventListener('keydown', e=>{
-  if(e.key==='Enter' && !document.getElementById('loginScreen').classList.contains('hidden')){
-    doLogin();
-  }
+  if(e.key==='Enter' && !document.getElementById('loginScreen').classList.contains('hidden')){ doLogin(); }
 });
 
 function uid(){ return 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -709,85 +743,49 @@ function toast(msg, type){
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'), 2400);
 }
 
-/* ---------------- Cleaning helpers ---------------- */
+/* ---------------- Helpers ---------------- */
 function getLastCleaning(flatId){
   const list = DB.cleanings.filter(c=>c.flatId===flatId).sort((a,b)=> b.date.localeCompare(a.date));
   return list[0] || null;
 }
-
-/* ---------------- Booking overlap check ---------------- */
 function findBookingConflict(flatId, checkIn, checkOut, excludeGuestId){
   return DB.guests.find(g=>{
     if(g.flatId!==flatId) return false;
     if(excludeGuestId && g.id===excludeGuestId) return false;
-    // Overlap if new check-in is before existing check-out AND new check-out is after existing check-in.
-    // Same-day handover (checkout date == next checkin date) is allowed.
     return (checkIn < g.checkOut) && (checkOut > g.checkIn);
   }) || null;
 }
-
-/* ---------------- Guest billing / ledger helpers ---------------- */
 function guestDays(g){ return Math.max(1, daysBetween(g.checkIn, g.checkOut)); }
 function guestTotalRent(g){
   const days = guestDays(g);
-  let base;
-  if(g.rentType==='monthly'){
-    const months = days/30;
-    base = Math.round((Number(g.monthlyRate)||0) * months);
-  } else {
-    base = days * Number(g.perDayRate||0);
-  }
+  let base = (g.rentType==='monthly') ? Math.round((Number(g.monthlyRate)||0) * (days/30)) : days * Number(g.perDayRate||0);
   return base + Number(g.serviceCharge||0);
 }
-function guestRateLabel(g){
-  if(g.rentType==='monthly') return `Tk ${fmt(g.monthlyRate)} / month`;
-  return `Tk ${fmt(g.perDayRate)} / day`;
-}
-function guestLedger(guestId){
-  return DB.guestPayments.filter(p=>p.guestId===guestId).sort((a,b)=>a.date.localeCompare(b.date));
-}
-// Cash actually received from the guest (initial advance at booking + later advance/rent payments). Adjustments move money already received from "advance" to "rent" and are not new cash.
+function guestRateLabel(g){ return g.rentType==='monthly' ? `Tk ${fmt(g.monthlyRate)} / month` : `Tk ${fmt(g.perDayRate)} / day`; }
+function guestLedger(guestId){ return DB.guestPayments.filter(p=>p.guestId===guestId).sort((a,b)=>a.date.localeCompare(b.date)); }
 function guestTotalReceived(g){
   const ledger = guestLedger(g.id);
   const later = ledger.filter(p=>p.type==='advance'||p.type==='rent').reduce((s,p)=>s+Number(p.amount),0);
   return Number(g.advancePaid||0) + later;
 }
-// Portion of total-received that has been counted against rent (rent-type payments + adjustments from advance)
 function guestRentPaid(g){
-  const ledger = guestLedger(g.id);
-  return ledger.filter(p=>p.type==='rent'||p.type==='adjustment').reduce((s,p)=>s+Number(p.amount),0);
+  return guestLedger(g.id).filter(p=>p.type==='rent'||p.type==='adjustment').reduce((s,p)=>s+Number(p.amount),0);
 }
-// Advance still sitting unused (not yet adjusted against rent)
 function guestAvailableAdvance(g){
   const ledger = guestLedger(g.id);
   const advanceIn = Number(g.advancePaid||0) + ledger.filter(p=>p.type==='advance').reduce((s,p)=>s+Number(p.amount),0);
   const advanceUsed = ledger.filter(p=>p.type==='adjustment').reduce((s,p)=>s+Number(p.amount),0);
   return Math.max(0, advanceIn - advanceUsed);
 }
-function guestBalanceDue(g){
-  return guestTotalRent(g) - guestRentPaid(g);
-}
+function guestBalanceDue(g){ return guestTotalRent(g) - guestRentPaid(g); }
 
-/* ---------------- Navigation ---------------- */
-const NAV = [
-  {sec:'Overview', items:[
-    {id:'dashboard', label:'Dashboard', icon:'grid'}
-  ]},
-  {sec:'Property', items:[
-    {id:'flats', label:'Flat Management', icon:'home'},
-    {id:'cleaning', label:'Cleaning Schedule', icon:'spark'},
-  ]},
-  {sec:'Booking', items:[
-    {id:'guests', label:'Guests & Booking', icon:'users'},
-  ]},
-  {sec:'Accounts', items:[
-    {id:'entries', label:'Income & Expense Entry', icon:'edit'},
-    {id:'houseReport', label:'House Report', icon:'file'},
-    {id:'ownerReport', label:'Owner Payment Report', icon:'dollar'},
-  ]},
-  {sec:'Settings', items:[
-    {id:'settings', label:'Company Settings', icon:'settings'},
-  ]},
+/* ---------------- Navigation & Roles ---------------- */
+const ALL_NAV = [
+  {sec:'Overview', items:[{id:'dashboard', label:'Dashboard', icon:'grid'}]},
+  {sec:'Property', items:[{id:'flats', label:'Flat Management', icon:'home'}, {id:'cleaning', label:'Cleaning Schedule', icon:'spark'}]},
+  {sec:'Booking', items:[{id:'guests', label:'Guests & Booking', icon:'users'}]},
+  {sec:'Accounts', items:[{id:'entries', label:'Income & Expense Entry', icon:'edit'}, {id:'houseReport', label:'House Report', icon:'file'}, {id:'ownerReport', label:'Owner Payment Report', icon:'dollar'}]},
+  {sec:'Settings', items:[{id:'settings', label:'Company Settings', icon:'settings'}]},
 ];
 const ICONS = {
   grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
@@ -802,33 +800,51 @@ const ICONS = {
   penEdit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
   print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 14H3a1 1 0 01-1-1v-4a1 1 0 011-1h18a1 1 0 011 1v4a1 1 0 01-1 1h-3"/></svg>',
   spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4z"/><path d="M13 6l3 3"/></svg>',
-  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
   eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
 };
 
 let currentPage = 'dashboard';
-let ctx = {}; // scratch context (selected month, flat, etc)
+let ctx = {};
+
+function getNavForRole(){
+  const r = currentUser.role;
+  if(r==='cleaner'){
+    return [{sec:'Property', items:[{id:'cleaning', label:'Cleaning Schedule', icon:'spark'}]}];
+  }
+  if(r==='viewer'){
+    return [
+      {sec:'Overview', items:[{id:'dashboard', label:'Dashboard', icon:'grid'}]},
+      {sec:'Property', items:[{id:'flats', label:'Flat Management', icon:'home'}, {id:'cleaning', label:'Cleaning Status', icon:'spark'}]}
+    ];
+  }
+  return ALL_NAV;
+}
 
 function renderNav(){
+  const allowedNav = getNavForRole();
   const nav = document.getElementById('navList');
-  nav.innerHTML = NAV.map(sec => `
+  nav.innerHTML = allowedNav.map(sec => `
     <div class="section-label">${sec.sec}</div>
     ${sec.items.map(it => `<button data-page="${it.id}" class="${currentPage===it.id?'active':''}">${ICONS[it.icon]}${it.label}</button>`).join('')}
   `).join('');
   nav.querySelectorAll('button[data-page]').forEach(b=>{
-    b.onclick = ()=>{ goTo(b.dataset.page); document.getElementById('sidebar').classList.remove('open'); };
+    b.onclick = ()=>{ 
+      goTo(b.dataset.page); 
+      // Close mobile menu on click
+      if(window.innerWidth <= 900) toggleMenu(); 
+    };
   });
 }
 
 const PAGE_META = {
   dashboard:['Dashboard','Overall overview & summary'],
-  flats:['Flat Management','Properties, availability & cleaning status'],
-  cleaning:['Cleaning Schedule','Log which flat was cleaned, when, and by whom'],
-  guests:['Guests & Booking','Guest entry, check-in/check-out & money receipt'],
-  entries:['Income & Expense Entry','Record monthly income & expense for each flat'],
-  houseReport:['House Report','Monthly income/expense summary per flat'],
-  ownerReport:['Owner Payment Report','Commission calculation & owner payment breakdown'],
-  settings:['Company Settings','Company info and default values']
+  flats:['Flat Management','Properties & availability'],
+  cleaning:['Cleaning Schedule','Log which flat was cleaned'],
+  guests:['Guests & Booking','Guest entry & check-in/out'],
+  entries:['Income & Expense Entry','Monthly income & expense'],
+  houseReport:['House Report','Income/expense summary'],
+  ownerReport:['Owner Payment Report','Commission & owner breakdown'],
+  settings:['Company Settings','Defaults and backup']
 };
 
 function goTo(page){
@@ -841,15 +857,16 @@ function goTo(page){
 
 function render(){
   const c = document.getElementById('content');
-  if(currentPage==='dashboard') c.innerHTML = renderDashboard();
-  else if(currentPage==='flats') c.innerHTML = renderFlats();
-  else if(currentPage==='cleaning') c.innerHTML = renderCleaning();
+  const role = currentUser.role;
+  
+  if(currentPage==='dashboard') c.innerHTML = renderDashboard(role);
+  else if(currentPage==='flats') c.innerHTML = renderFlats(role);
+  else if(currentPage==='cleaning') c.innerHTML = renderCleaning(role);
   else if(currentPage==='guests') c.innerHTML = renderGuests();
   else if(currentPage==='entries') c.innerHTML = renderEntries();
   else if(currentPage==='houseReport') c.innerHTML = renderHouseReport();
   else if(currentPage==='ownerReport') c.innerHTML = renderOwnerReport();
   else if(currentPage==='settings') c.innerHTML = renderSettings();
-  bindPageEvents();
 }
 
 /* ================= MODAL HELPERS ================= */
@@ -862,99 +879,105 @@ function closeModal(){ document.getElementById('overlay').classList.remove('show
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
 
 /* ================= DASHBOARD ================= */
-function renderDashboard(){
+function renderDashboard(role){
   const totalFlats = DB.flats.length;
   const avail = DB.flats.filter(f=>f.status==='Available').length;
   const notAvail = totalFlats - avail;
   const cm = curMonth();
   const monthEntries = DB.entries.filter(e=>e.month===cm);
+  
   const totalRent = monthEntries.filter(e=>e.type==='rent').reduce((s,e)=>s+Number(e.amount),0);
   const totalCommon = monthEntries.filter(e=>e.type==='common').reduce((s,e)=>s+Number(e.amount),0);
   const totalOwnerExp = monthEntries.filter(e=>e.type==='owner').reduce((s,e)=>s+Number(e.amount),0);
   const netIncome = totalRent - totalCommon;
-  const commission = netIncome * (DB.settings.defaultCommission/100);
+  
+  // Calculate total commission considering both % and Fixed types
+  const commission = DB.flats.reduce((sum, f) => {
+    const list = monthEntries.filter(e=>e.flatId === f.id);
+    const r = list.filter(e=>e.type==='rent').reduce((s,e)=>s+Number(e.amount),0);
+    const c = list.filter(e=>e.type==='common').reduce((s,e)=>s+Number(e.amount),0);
+    const inc = r - c;
+    if(f.commType === 'fixed') { return sum + (inc > 0 ? (Number(f.commValue)||0) : 0); }
+    else { return sum + (inc * ((Number(f.commValue)||DB.settings.defaultCommission)/100)); }
+  }, 0);
 
   const needsCleaning = DB.flats.map(f=>({f, last:getLastCleaning(f.id)}))
     .filter(x=> !x.last || daysBetween(x.last.date, todayISO()) >= 7)
-    .sort((a,b)=>{
-      const da = a.last? a.last.date : '0000-00-00';
-      const db_ = b.last? b.last.date : '0000-00-00';
-      return da.localeCompare(db_);
-    })
+    .sort((a,b)=> (a.last?a.last.date:'0000-00-00').localeCompare(b.last?b.last.date:'0000-00-00'))
     .slice(0,6);
 
-  const upcoming = DB.guests
-    .filter(g=> g.checkOut >= todayISO())
-    .sort((a,b)=> a.checkIn.localeCompare(b.checkIn))
-    .slice(0,6);
+  const upcoming = DB.guests.filter(g=> g.checkOut >= todayISO()).sort((a,b)=> a.checkIn.localeCompare(b.checkIn)).slice(0,6);
 
-  return `
+  let html = `
   <div class="grid-kpi">
     <div class="kpi"><div class="bar"></div><div class="label">Total Flats</div><div class="val">${totalFlats}</div></div>
     <div class="kpi k-green"><div class="bar"></div><div class="label">Available</div><div class="val">${avail}</div></div>
     <div class="kpi k-black"><div class="bar"></div><div class="label">Not Available</div><div class="val">${notAvail}</div></div>
-    <div class="kpi k-amber"><div class="bar"></div><div class="label">${monthLabel(cm)} — Total Rent</div><div class="val">Tk ${fmtInt(totalRent)}</div></div>
+    ${role!=='viewer' ? `<div class="kpi k-amber"><div class="bar"></div><div class="label">${monthLabel(cm)} — Total Rent</div><div class="val">Tk ${fmtInt(totalRent)}</div></div>` : ''}
   </div>
+  <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px;" class="dash-grid">`;
 
-  <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px;" class="dash-grid">
-  <div class="card">
-    <div class="card-head"><h3>${monthLabel(cm)} — Summary (All Flats)</h3></div>
-    <div class="card-body">
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>Particulars</th><th class="num">Amount (Tk)</th></tr></thead>
-        <tbody>
-          <tr><td>Total Rent Received</td><td class="num">${fmt(totalRent)}</td></tr>
-          <tr><td>Common Expense</td><td class="num">${fmt(totalCommon)}</td></tr>
-          <tr><td>Net Income (Rent − Common Exp.)</td><td class="num">${fmt(netIncome)}</td></tr>
-          <tr><td>DhakaHome Commission (${DB.settings.defaultCommission}%)</td><td class="num">${fmt(commission)}</td></tr>
-          <tr><td>Owner Personal Expense</td><td class="num">${fmt(totalOwnerExp)}</td></tr>
-        </tbody>
-        <tfoot><tr><td>Estimated Payment Due to Owner</td><td class="num">Tk ${fmt(netIncome - commission - totalOwnerExp)}</td></tr></tfoot>
-      </table></div>
-      ${totalFlats===0? `<div class="hint" style="margin-top:10px;">Add flats first from "Flat Management" to get started.</div>`:''}
-    </div>
-  </div>
+  if(role !== 'viewer') {
+    html += `
+    <div class="card">
+      <div class="card-head"><h3>${monthLabel(cm)} — Financial Summary</h3></div>
+      <div class="card-body">
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Particulars</th><th class="num">Amount (Tk)</th></tr></thead>
+          <tbody>
+            <tr><td>Total Rent Received</td><td class="num">${fmt(totalRent)}</td></tr>
+            <tr><td>Common Expense</td><td class="num">${fmt(totalCommon)}</td></tr>
+            <tr><td>Net Income (Rent − Common Exp.)</td><td class="num">${fmt(netIncome)}</td></tr>
+            <tr><td>DhakaHome Commission (Calculated)</td><td class="num">${fmt(commission)}</td></tr>
+            <tr><td>Owner Personal Expense</td><td class="num">${fmt(totalOwnerExp)}</td></tr>
+          </tbody>
+          <tfoot><tr><td>Estimated Payment Due to Owners</td><td class="num">Tk ${fmt(netIncome - commission - totalOwnerExp)}</td></tr></tfoot>
+        </table></div>
+      </div>
+    </div>`;
+  }
 
-  <div class="card">
-    <div class="card-head"><h3>Cleaning Needed</h3></div>
-    <div class="card-body">
-      ${needsCleaning.length===0? `<div class="hint">All flats are up to date.</div>` :
-        needsCleaning.map(x=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
-          <div>
-            <div style="font-weight:600;font-size:13.5px;">${esc(x.f.name)}</div>
-            <div class="hint" style="margin-top:1px;">${x.last? 'Last cleaned: '+niceDate(x.last.date)+(x.last.cleanerName? ' by '+esc(x.last.cleanerName):'') : 'Never cleaned yet'}</div>
-          </div>
-          <button class="btn btn-sm btn-ghost" onclick="quickLogCleaning('${x.f.id}')">Log Cleaning</button>
-        </div>`).join('')
-      }
-    </div>
-  </div>
+  html += `
+    <div class="card" ${role==='viewer'?'style="grid-column:1/-1"':''}>
+      <div class="card-head"><h3>Cleaning Alerts</h3></div>
+      <div class="card-body">
+        ${needsCleaning.length===0? `<div class="hint">All flats are up to date.</div>` :
+          needsCleaning.map(x=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
+            <div>
+              <div style="font-weight:600;font-size:13.5px;">${esc(x.f.name)}</div>
+              <div class="hint" style="margin-top:1px;">${x.last? 'Last cleaned: '+niceDate(x.last.date) : 'Never cleaned yet'}</div>
+            </div>
+          </div>`).join('')
+        }
+      </div>
+    </div>`;
 
-  <div class="card" style="margin-top:16px;">
-    <div class="card-head"><h3>Upcoming / Active Bookings</h3></div>
-    <div class="card-body">
-      ${upcoming.length===0? `<div class="hint">No active bookings.</div>` : `
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>Guest</th><th>Flat</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr></thead>
-        <tbody>
-        ${upcoming.map(g=>{
-          const f = DB.flats.find(x=>x.id===g.flatId);
-          const active = g.checkIn<=todayISO() && g.checkOut>=todayISO();
-          return `<tr>
-            <td>${esc(g.name)}</td>
-            <td>${f?esc(f.name):'—'}</td>
-            <td>${niceDate(g.checkIn)}</td>
-            <td>${niceDate(g.checkOut)}</td>
-            <td>${active? '<span class="badge badge-unavail"><span class="dot"></span>Staying Now</span>':'<span class="badge badge-avail"><span class="dot"></span>Upcoming</span>'}</td>
-          </tr>`;
-        }).join('')}
-        </tbody>
-      </table></div>`}
-    </div>
-  </div>
-  <style>@media(max-width:900px){.dash-grid{grid-template-columns:1fr !important;}}</style>
-  `;
+  if(role !== 'viewer') {
+    html += `
+    <div class="card" style="grid-column:1/-1; margin-top:16px;">
+      <div class="card-head"><h3>Upcoming / Active Bookings</h3></div>
+      <div class="card-body">
+        ${upcoming.length===0? `<div class="hint">No active bookings.</div>` : `
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Guest</th><th>Flat</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr></thead>
+          <tbody>
+          ${upcoming.map(g=>{
+            const f = DB.flats.find(x=>x.id===g.flatId);
+            const active = g.checkIn<=todayISO() && g.checkOut>=todayISO();
+            return `<tr>
+              <td>${esc(g.name)}</td><td>${f?esc(f.name):'—'}</td><td>${niceDate(g.checkIn)}</td><td>${niceDate(g.checkOut)}</td>
+              <td>${active? '<span class="badge badge-unavail"><span class="dot"></span>Staying Now</span>':'<span class="badge badge-avail"><span class="dot"></span>Upcoming</span>'}</td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>`;
+  }
+  
+  html += `</div><style>@media(max-width:900px){.dash-grid{grid-template-columns:1fr !important;}}</style>`;
+  return html;
 }
 
 /* ================= FLATS ================= */
@@ -967,24 +990,26 @@ function cleanBadge(f){
   return `<span class="badge badge-clean-bad">${d}d ago</span>`;
 }
 
-function renderFlats(){
+function renderFlats(role){
   const rows = DB.flats;
+  const isRead = role === 'viewer';
   const detailBits = f => [f.flatNo?('Flat No: '+f.flatNo):null, f.areaSize?(f.areaSize):null, (f.bedroom||f.bathroom)?((f.bedroom??'—')+' Bed / '+(f.bathroom??'—')+' Bath'):null].filter(Boolean).join(' • ');
+  
   return `
   <div class="card">
     <div class="card-head">
       <h3>Flat List (${rows.length})</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" onclick="printAllFlatsReport()">${ICONS.print} All Flats Report</button>
-        <button class="btn btn-ghost btn-sm" onclick="printAvailableFlatsReport()">${ICONS.print} Available Flats Report</button>
-        <button class="btn btn-primary btn-sm" onclick="openFlatForm()">${ICONS.plus} New Flat</button>
+        <button class="btn btn-ghost btn-sm" onclick="printAllFlatsReport()">${ICONS.print} All Flats</button>
+        <button class="btn btn-ghost btn-sm" onclick="printAvailableFlatsReport()">${ICONS.print} Available Flats</button>
+        ${!isRead ? `<button class="btn btn-primary btn-sm" onclick="openFlatForm()">${ICONS.plus} New Flat</button>` : ''}
       </div>
     </div>
     <div class="card-body">
-      ${rows.length===0? emptyState('home','No flats yet','Add your first flat — you can add all 30 flats gradually.') : `
+      ${rows.length===0? emptyState('home','No flats yet','Add your first flat here.') : `
       <div class="tbl-wrap"><table>
         <thead><tr>
-          <th>Flat / Address</th><th>Base Rent</th><th>Commission %</th><th>Status</th><th>Cleaning</th><th></th>
+          <th>Flat / Address</th><th>Base Rent</th><th>Commission</th><th>Status</th><th>Cleaning</th><th></th>
         </tr></thead>
         <tbody>
         ${rows.map(f=>`
@@ -995,17 +1020,19 @@ function renderFlats(){
               ${detailBits(f)? `<div class="hint" style="margin-top:2px;">${esc(detailBits(f))}</div>`:''}
             </td>
             <td class="num">Tk ${fmtInt(f.baseRent)}</td>
-            <td class="num">${f.commissionPct ?? DB.settings.defaultCommission}%</td>
+            <td class="num">${f.commType==='fixed'? 'Tk '+fmtInt(f.commValue) : (f.commValue??DB.settings.defaultCommission)+'%'}</td>
             <td>
-              <span class="badge ${f.status==='Available'?'badge-avail':'badge-unavail'}" style="cursor:pointer;" onclick="toggleFlatStatus('${f.id}')">
+              <span class="badge ${f.status==='Available'?'badge-avail':'badge-unavail'}" ${!isRead?'style="cursor:pointer;" onclick="toggleFlatStatus(\''+f.id+'\')"':''}>
                 <span class="dot"></span>${f.status}
               </span>
             </td>
-            <td>${cleanBadge(f)} <button class="icon-btn" title="Log cleaning" onclick="quickLogCleaning('${f.id}')">🧹</button></td>
+            <td>${cleanBadge(f)}</td>
             <td style="text-align:right;white-space:nowrap;">
               <button class="icon-btn" title="Profile" onclick="openFlatProfile('${f.id}')">${ICONS.eye}</button>
+              ${!isRead ? `
               <button class="icon-btn" title="Edit" onclick="openFlatForm('${f.id}')">${ICONS.penEdit}</button>
               <button class="icon-btn" onclick="deleteFlat('${f.id}')" style="color:var(--red);">${ICONS.trash}</button>
+              ` : ''}
             </td>
           </tr>
         `).join('')}
@@ -1014,43 +1041,35 @@ function renderFlats(){
     </div>
   </div>`;
 }
+
 function toggleFlatStatus(id){
   const f = DB.flats.find(x=>x.id===id); if(!f) return;
   f.status = f.status==='Available' ? 'Not Available' : 'Available';
   persist('flats'); render(); toast('Status updated');
 }
+
 function deleteFlat(id){
   const f = DB.flats.find(x=>x.id===id); if(!f) return;
-  const entryCount = DB.entries.filter(e=>e.flatId===id).length;
-  const cleanCount = DB.cleanings.filter(c=>c.flatId===id).length;
-  const guestList = DB.guests.filter(g=>g.flatId===id);
-  const guestIds = guestList.map(g=>g.id);
-  const paymentCount = DB.payments.filter(p=>p.flatId===id).length;
-  const guestPaymentCount = DB.guestPayments.filter(gp=>guestIds.includes(gp.guestId)).length;
-  const totalRelated = entryCount + cleanCount + guestList.length + paymentCount + guestPaymentCount;
-  const msg = totalRelated>0
-    ? `Delete "${f.name}"?\n\nThis will PERMANENTLY delete:\n• ${entryCount} income/expense entr${entryCount===1?'y':'ies'}\n• ${cleanCount} cleaning record(s)\n• ${guestList.length} guest/booking record(s)\n• ${paymentCount} owner payment record(s)\n\nThis cannot be undone.`
-    : `Delete "${f.name}"? This cannot be undone.`;
-  if(!confirm(msg)) return;
+  if(!confirm(`Delete "${f.name}"? This cannot be undone.`)) return;
   DB.flats = DB.flats.filter(x=>x.id!==id);
   DB.entries = DB.entries.filter(e=>e.flatId!==id);
   DB.cleanings = DB.cleanings.filter(c=>c.flatId!==id);
   DB.guests = DB.guests.filter(g=>g.flatId!==id);
-  DB.guestPayments = DB.guestPayments.filter(gp=>!guestIds.includes(gp.guestId));
   DB.payments = DB.payments.filter(p=>p.flatId!==id);
-  persist();
-  render(); toast('Flat and all related records deleted','err');
+  persist(); render(); toast('Flat deleted','err');
 }
+
 function openFlatForm(id){
   const f = id ? DB.flats.find(x=>x.id===id) : null;
+  const isFixed = f && f.commType === 'fixed';
   openModal(`
     <div class="modal-head"><h3>${f?'Edit Flat':'New Flat'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
-      <div class="field"><label>Flat Name / ID *</label><input id="fl_name" placeholder="e.g. House-149, Road-08, Block-D, Bashundhara R/A" value="${f?esc(f.name):''}"></div>
+      <div class="field"><label>Flat Name / ID *</label><input id="fl_name" value="${f?esc(f.name):''}"></div>
       <div class="field"><label>Full Address</label><input id="fl_address" value="${f?esc(f.address||''):''}"></div>
       <div class="field-row">
-        <div class="field"><label>Flat No</label><input id="fl_flatno" placeholder="e.g. B4" value="${f?esc(f.flatNo||''):''}"></div>
-        <div class="field"><label>Area Size</label><input id="fl_area" placeholder="e.g. 1450 sqft" value="${f?esc(f.areaSize||''):''}"></div>
+        <div class="field"><label>Flat No</label><input id="fl_flatno" value="${f?esc(f.flatNo||''):''}"></div>
+        <div class="field"><label>Area Size</label><input id="fl_area" value="${f?esc(f.areaSize||''):''}"></div>
       </div>
       <div class="field-row3">
         <div class="field"><label>Bedroom</label><input id="fl_bed" type="number" min="0" value="${f&&f.bedroom!=null?f.bedroom:''}"></div>
@@ -1062,23 +1081,45 @@ function openFlatForm(id){
         <div class="field"><label>Drawing Room</label><input id="fl_drawing" type="number" min="0" value="${f&&f.drawing!=null?f.drawing:''}"></div>
         <div class="field"><label>Dining</label><input id="fl_dining" type="number" min="0" value="${f&&f.dining!=null?f.dining:''}"></div>
       </div>
+      
+      <!-- New Required Fields -->
+      <div class="field-row">
+        <div class="field"><label>Servant Washroom (Qty)</label><input id="fl_servant" type="number" min="0" value="${f&&f.servant!=null?f.servant:0}"></div>
+        <div class="field"><label>Balconies (Qty)</label><input id="fl_balcony" type="number" min="0" value="${f&&f.balcony!=null?f.balcony:0}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Electricity System</label>
+          <select id="fl_elec">
+            <option value="Prepaid" ${f&&f.elec==='Prepaid'?'selected':''}>Prepaid</option>
+            <option value="Postpaid" ${f&&f.elec==='Postpaid'?'selected':''}>Postpaid</option>
+            <option value="Others" ${f&&f.elec==='Others'?'selected':''}>Others</option>
+          </select>
+        </div>
+        <div class="field"><label>Gas System</label>
+          <select id="fl_gas">
+            <option value="Prepaid" ${f&&f.gas==='Prepaid'?'selected':''}>Prepaid</option>
+            <option value="Postpaid" ${f&&f.gas==='Postpaid'?'selected':''}>Postpaid</option>
+            <option value="Others" ${f&&f.gas==='Others'?'selected':''}>Others</option>
+          </select>
+        </div>
+      </div>
+      
       <div class="field-row">
         <div class="field"><label>Base Monthly Rent (Tk)</label><input id="fl_rent" type="number" value="${f?f.baseRent||'':''}"></div>
-        <div class="field"><label>Default Commission (%)</label><input id="fl_comm" type="number" value="${f?f.commissionPct??'':''}" placeholder="${DB.settings.defaultCommission}"></div>
+        <div class="field"><label>Commission Setup</label>
+          <select id="fl_commType" onchange="document.getElementById('lbl_comm').innerText = this.value==='fixed'?'Fixed Amount (Tk)':'Commission (%)'">
+            <option value="pct" ${!isFixed?'selected':''}>Percentage (%)</option>
+            <option value="fixed" ${isFixed?'selected':''}>Fixed Amount (Tk)</option>
+          </select>
+        </div>
       </div>
-      <div class="field"><label>Tenant Advance Balance (Tk)</label><input id="fl_advance" type="number" value="${f&&f.tenantAdvance!=null?f.tenantAdvance:0}"><div class="hint">Advance/security money currently held from the tenant. Set this when they first pay an advance; it goes down automatically when you adjust it against rent from the Dashboard.</div></div>
+      <div class="field"><label id="lbl_comm">${isFixed?'Fixed Amount (Tk)':'Commission (%)'}</label><input id="fl_comm" type="number" value="${f?f.commValue??DB.settings.defaultCommission:DB.settings.defaultCommission}"></div>
+      
       <div class="field"><label>Status</label>
         <select id="fl_status">
           <option value="Available" ${f&&f.status==='Available'?'selected':''}>Available</option>
           <option value="Not Available" ${f&&f.status==='Not Available'?'selected':''}>Not Available</option>
         </select>
-      </div>
-      <div class="field">
-        <label>Inventory PDF (furniture / appliances list)</label>
-        <input type="file" id="fl_inv_file" accept="application/pdf" onchange="handleInventoryPdfUpload(event)">
-        <input type="hidden" id="fl_inv_data" value="${f&&f.inventoryPdfData?esc(f.inventoryPdfData):''}">
-        <input type="hidden" id="fl_inv_name" value="${f&&f.inventoryPdfName?esc(f.inventoryPdfName):''}">
-        <div class="hint" id="fl_inv_current">${f&&f.inventoryPdfName? '📎 Uploaded: '+esc(f.inventoryPdfName)+' — <a href="#" onclick="removeInventoryPdf(event)" style="color:var(--red);">Remove</a>' : 'No file uploaded yet (max 1.5MB, PDF only)'}</div>
       </div>
       <div class="field"><label>Notes</label><textarea id="fl_notes" rows="2">${f?esc(f.notes||''):''}</textarea></div>
     </div>
@@ -1088,25 +1129,7 @@ function openFlatForm(id){
     </div>
   `);
 }
-function handleInventoryPdfUpload(evt){
-  const file = evt.target.files[0]; if(!file) return;
-  if(file.type !== 'application/pdf'){ toast('Please choose a PDF file','err'); evt.target.value=''; return; }
-  if(file.size > 1.5*1024*1024){ toast('Please choose a PDF under 1.5MB (browser storage limit)','err'); evt.target.value=''; return; }
-  const reader = new FileReader();
-  reader.onload = e=>{
-    document.getElementById('fl_inv_data').value = e.target.result;
-    document.getElementById('fl_inv_name').value = file.name;
-    document.getElementById('fl_inv_current').innerHTML = '📎 Selected: '+esc(file.name);
-  };
-  reader.readAsDataURL(file);
-}
-function removeInventoryPdf(e){
-  e.preventDefault();
-  document.getElementById('fl_inv_data').value='';
-  document.getElementById('fl_inv_name').value='';
-  const fileInput = document.getElementById('fl_inv_file'); if(fileInput) fileInput.value='';
-  document.getElementById('fl_inv_current').textContent='No file uploaded yet (max 1.5MB, PDF only)';
-}
+
 function saveFlat(id){
   const name = document.getElementById('fl_name').value.trim();
   if(!name){ toast('Please enter a flat name','err'); return; }
@@ -1122,87 +1145,30 @@ function saveFlat(id){
     parking: numOrBlank(document.getElementById('fl_parking').value),
     drawing: numOrBlank(document.getElementById('fl_drawing').value),
     dining: numOrBlank(document.getElementById('fl_dining').value),
+    servant: numOrBlank(document.getElementById('fl_servant').value),
+    balcony: numOrBlank(document.getElementById('fl_balcony').value),
+    elec: document.getElementById('fl_elec').value,
+    gas: document.getElementById('fl_gas').value,
     baseRent: Number(document.getElementById('fl_rent').value)||0,
-    commissionPct: document.getElementById('fl_comm').value===''? null : Number(document.getElementById('fl_comm').value),
-    tenantAdvance: Number(document.getElementById('fl_advance').value)||0,
+    commType: document.getElementById('fl_commType').value,
+    commValue: document.getElementById('fl_comm').value===''? null : Number(document.getElementById('fl_comm').value),
     status: document.getElementById('fl_status').value,
-    notes: document.getElementById('fl_notes').value.trim(),
-    inventoryPdfData: document.getElementById('fl_inv_data').value || '',
-    inventoryPdfName: document.getElementById('fl_inv_name').value || '',
+    notes: document.getElementById('fl_notes').value.trim()
   };
-  try{
-    if(id){ Object.assign(DB.flats.find(x=>x.id===id), data); }
-    else { DB.flats.push({id:uid(), ...data}); }
-    persist('flats');
-  }catch(e){
-    toast('Could not save — inventory PDF may be too large for browser storage','err');
-    return;
-  }
-  closeModal(); render(); toast('Flat saved');
+  if(id) Object.assign(DB.flats.find(x=>x.id===id), data);
+  else DB.flats.push({id:uid(), ...data});
+  persist('flats'); closeModal(); render(); toast('Flat saved');
 }
 
-/* ================= TENANT ADVANCE ================= */
-function openAdjustAdvance(flatId){
-  const f = DB.flats.find(x=>x.id===flatId); if(!f) return;
-  const balance = Number(f.tenantAdvance)||0;
-  openModal(`
-    <div class="modal-head"><h3>Adjust Advance Against Rent</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="hint" style="margin-bottom:12px;">${esc(f.name)} — Current Advance Balance: <b>Tk ${fmt(balance)}</b></div>
-      <div class="field"><label>Date *</label><input id="adv_date" type="date" value="${todayISO()}"></div>
-      <div class="field"><label>Amount to Adjust (Tk) *</label><input id="adv_amount" type="number" max="${balance}" placeholder="e.g. ${fmtInt(f.baseRent||0)}"></div>
-      <div class="field"><label>Note</label><input id="adv_note" placeholder="e.g. Adjusted against August rent" value="Rent adjusted from Tenant Advance"></div>
-      <div class="hint">This amount will be subtracted from the tenant's advance balance and recorded as a Rent Received entry for this flat (so House/Owner reports stay accurate).</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveAdjustAdvance('${flatId}')">Adjust</button>
-    </div>
-  `);
-}
-function saveAdjustAdvance(flatId){
-  const f = DB.flats.find(x=>x.id===flatId); if(!f) return;
-  const date = document.getElementById('adv_date').value;
-  const amount = Number(document.getElementById('adv_amount').value);
-  const note = document.getElementById('adv_note').value.trim() || 'Rent adjusted from Tenant Advance';
-  if(!date || !amount || amount<=0){ toast('Please enter a valid date and amount','err'); return; }
-  const balance = Number(f.tenantAdvance)||0;
-  if(amount > balance){ if(!confirm(`This amount (Tk ${fmt(amount)}) is more than the current advance balance (Tk ${fmt(balance)}). Continue anyway?`)) return; }
-  f.tenantAdvance = balance - amount;
-  DB.entries.push({ id: uid(), flatId, date, month: date.slice(0,7), particular: note, type:'rent', amount });
-  persist();
-  closeModal(); render(); toast('Advance adjusted against rent');
-}
-function openSetAdvance(flatId){
-  const f = DB.flats.find(x=>x.id===flatId); if(!f) return;
-  openModal(`
-    <div class="modal-head"><h3>Add / Set Tenant Advance</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="hint" style="margin-bottom:12px;">${esc(f.name)} — Current Advance Balance: <b>Tk ${fmt(Number(f.tenantAdvance)||0)}</b></div>
-      <div class="field"><label>New Advance Balance (Tk) *</label><input id="advset_amount" type="number" value="${Number(f.tenantAdvance)||0}"></div>
-      <div class="hint">Set this to the total advance/security money currently held from the tenant (e.g. after they pay a fresh advance).</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSetAdvance('${flatId}')">Save</button>
-    </div>
-  `);
-}
-function saveSetAdvance(flatId){
-  const f = DB.flats.find(x=>x.id===flatId); if(!f) return;
-  const amount = Number(document.getElementById('advset_amount').value);
-  if(isNaN(amount) || amount<0){ toast('Please enter a valid amount','err'); return; }
-  f.tenantAdvance = amount;
-  persist('flats'); closeModal(); render(); toast('Tenant advance updated');
-}
-
-/* ================= PRINTABLE REPORTS (Flats / Available / Cleaning) ================= */
+/* ================= PRINTABLE REPORTS ================= */
 function printHTML(html){
-  const holder = document.createElement('div'); holder.id='printArea'; holder.innerHTML = `<div style="padding:10px;">${html}</div>`;
+  const holder = document.createElement('div'); holder.id='printArea'; 
+  holder.innerHTML = `<div style="padding:10px;">${html}</div>`;
   document.body.appendChild(holder);
   window.print();
   setTimeout(()=>{ if(holder.parentNode) document.body.removeChild(holder); }, 500);
 }
+
 function reportLetterhead(title, subtitle){
   const s = DB.settings;
   return `
@@ -1217,90 +1183,51 @@ function reportLetterhead(title, subtitle){
     </div>
   </div>`;
 }
+
 function printAllFlatsReport(){
   const rows = DB.flats;
   const html = `
   <div class="receipt-doc" style="padding:0;">
     ${reportLetterhead('All Flats Report', rows.length+' flat(s) total')}
     <table class="rtable">
-      <thead><tr>
-        <th>Flat / Address</th><th>Flat No</th><th>Area</th><th>Bed</th><th>Bath</th><th style="text-align:right;">Base Rent (Tk)</th><th>Comm. %</th><th>Status</th>
-      </tr></thead>
+      <thead><tr><th>Flat / Address</th><th>Flat No</th><th>Bed/Bath</th><th>Base Rent (Tk)</th><th>Comm.</th><th>Status</th></tr></thead>
       <tbody>
-      ${rows.length===0? `<tr><td colspan="8" style="text-align:center;padding:20px;">No flats added yet</td></tr>` :
-        rows.map(f=>`<tr>
-          <td><b>${esc(f.name)}</b><br><span style="font-size:11.5px;color:#666;">${esc(f.address||'')}</span></td>
-          <td>${esc(f.flatNo||'—')}</td>
-          <td>${esc(f.areaSize||'—')}</td>
-          <td style="text-align:center;">${f.bedroom??'—'}</td>
-          <td style="text-align:center;">${f.bathroom??'—'}</td>
-          <td style="text-align:right;">${fmt(f.baseRent)}</td>
-          <td style="text-align:center;">${f.commissionPct??DB.settings.defaultCommission}%</td>
-          <td>${f.status}</td>
-        </tr>`).join('')
-      }
+      ${rows.map(f=>`<tr>
+        <td><b>${esc(f.name)}</b><br><span style="font-size:11.5px;">${esc(f.address||'')}</span></td>
+        <td>${esc(f.flatNo||'—')}</td>
+        <td>${f.bedroom??'—'} / ${f.bathroom??'—'}</td>
+        <td style="text-align:right;">${fmt(f.baseRent)}</td>
+        <td style="text-align:center;">${f.commType==='fixed'? 'Tk '+fmt(f.commValue) : (f.commValue??DB.settings.defaultCommission)+'%'}</td>
+        <td>${f.status}</td>
+      </tr>`).join('')}
       </tbody>
     </table>
-    <div class="rfoot"><span>Computer generated report.</span><span>${esc(DB.settings.website)}</span></div>
-  </div>`;
-  printHTML(html);
-}
-function printAvailableFlatsReport(){
-  const rows = DB.flats.filter(f=>f.status==='Available');
-  const html = `
-  <div class="receipt-doc" style="padding:0;">
-    ${reportLetterhead('Available Flats Report', rows.length+' flat(s) available')}
-    <table class="rtable">
-      <thead><tr>
-        <th>Flat / Address</th><th>Flat No</th><th>Area</th><th>Bed</th><th>Bath</th><th>Kitchen</th><th>Parking</th><th style="text-align:right;">Base Rent (Tk)</th>
-      </tr></thead>
-      <tbody>
-      ${rows.length===0? `<tr><td colspan="8" style="text-align:center;padding:20px;">No available flats right now</td></tr>` :
-        rows.map(f=>`<tr>
-          <td><b>${esc(f.name)}</b><br><span style="font-size:11.5px;color:#666;">${esc(f.address||'')}</span></td>
-          <td>${esc(f.flatNo||'—')}</td>
-          <td>${esc(f.areaSize||'—')}</td>
-          <td style="text-align:center;">${f.bedroom??'—'}</td>
-          <td style="text-align:center;">${f.bathroom??'—'}</td>
-          <td style="text-align:center;">${f.kitchen??'—'}</td>
-          <td style="text-align:center;">${f.parking??'—'}</td>
-          <td style="text-align:right;">${fmt(f.baseRent)}</td>
-        </tr>`).join('')
-      }
-      </tbody>
-    </table>
-    <div class="rfoot"><span>Computer generated report.</span><span>${esc(DB.settings.website)}</span></div>
-  </div>`;
-  printHTML(html);
-}
-function printFlatCleaningReport(flatId){
-  const f = DB.flats.find(x=>x.id===flatId);
-  if(!f){ toast('Flat not found','err'); return; }
-  const rows = DB.cleanings.filter(c=>c.flatId===flatId).sort((a,b)=>b.date.localeCompare(a.date));
-  const html = `
-  <div class="receipt-doc" style="padding:0;">
-    ${reportLetterhead('Cleaning Report', f.name)}
-    <div class="hint" style="margin-bottom:10px;">${esc(f.address||'')}</div>
-    <table class="rtable">
-      <thead><tr><th>Date</th><th>Cleaner</th><th>Notes</th></tr></thead>
-      <tbody>
-      ${rows.length===0? `<tr><td colspan="3" style="text-align:center;padding:20px;">No cleaning records for this flat yet</td></tr>` :
-        rows.map(c=>`<tr><td>${niceDate(c.date)}</td><td>${esc(c.cleanerName||'—')}</td><td>${esc(c.notes||'—')}</td></tr>`).join('')
-      }
-      </tbody>
-    </table>
-    <div class="rfoot"><span>Total cleaning records: ${rows.length}</span><span>${esc(DB.settings.website)}</span></div>
   </div>`;
   printHTML(html);
 }
 
-/* ================= FLAT PROFILE (printable, customizable) ================= */
+function printAvailableFlatsReport(){
+  const rows = DB.flats.filter(f=>f.status==='Available');
+  const html = `
+  <div class="receipt-doc" style="padding:0;">
+    ${reportLetterhead('Available Flats', rows.length+' available')}
+    <table class="rtable">
+      <thead><tr><th>Flat</th><th>Flat No</th><th>Bed</th><th>Bath</th><th>Base Rent (Tk)</th></tr></thead>
+      <tbody>
+      ${rows.map(f=>`<tr><td><b>${esc(f.name)}</b></td><td>${esc(f.flatNo||'—')}</td><td style="text-align:center;">${f.bedroom??'—'}</td><td style="text-align:center;">${f.bathroom??'—'}</td><td style="text-align:right;">${fmt(f.baseRent)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+  printHTML(html);
+}
+
+/* ================= FLAT PROFILE ================= */
 function openFlatProfile(id){
   const f = DB.flats.find(x=>x.id===id); if(!f) return;
   const s = DB.settings;
-  const last = getLastCleaning(f.id);
-  const cleaningCount = DB.cleanings.filter(c=>c.flatId===f.id).length;
+  const isFixed = f.commType === 'fixed';
   const row = (label, val) => `<div class="row"><span>${label}</span><b>${val}</b></div>`;
+  
   const html = `
     <div class="modal-head no-print"><h3>Flat Profile</h3><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body" style="padding:0;">
@@ -1311,51 +1238,39 @@ function openFlatProfile(id){
           <div class="box">
             <h4>Basic Information</h4>
             ${row('Flat Name / ID', esc(f.name))}
-            ${row('Flat No', esc(f.flatNo||'—'))}
             ${row('Address', esc(f.address||'—'))}
-            ${row('Area Size', esc(f.areaSize||'—'))}
             ${row('Status', f.status)}
+            ${row('Electricity System', f.elec||'—')}
+            ${row('Gas System', f.gas||'—')}
           </div>
           <div class="box">
             <h4>Room Details</h4>
             ${row('Bedroom', f.bedroom??'—')}
             ${row('Bathroom', f.bathroom??'—')}
             ${row('Kitchen', f.kitchen??'—')}
-            ${row('Drawing Room', f.drawing??'—')}
-            ${row('Dining', f.dining??'—')}
-            ${row('Parking', f.parking??'—')}
+            ${row('Servant Washroom', f.servant??'0')}
+            ${row('Balconies', f.balcony??'0')}
           </div>
         </div>
         <div class="rgrid">
           <div class="box">
             <h4>Rent & Commission</h4>
             ${row('Base Monthly Rent', 'Tk '+fmt(f.baseRent))}
-            ${row('Commission %', (f.commissionPct??s.defaultCommission)+'%')}
-            ${row('Tenant Advance Balance', 'Tk '+fmt(Number(f.tenantAdvance)||0))}
-            <div class="no-print" style="margin-top:8px;display:flex;gap:6px;">
-              <button class="btn btn-sm btn-ghost" onclick="openSetAdvance('${f.id}')">Add / Set Advance</button>
-              <button class="btn btn-sm btn-dark" onclick="openAdjustAdvance('${f.id}')" ${(Number(f.tenantAdvance)||0)<=0?'disabled':''}>Adjust Against Rent</button>
-            </div>
+            ${row(isFixed?'Fixed Commission':'Commission %', isFixed ? 'Tk '+fmt(f.commValue) : (f.commValue??s.defaultCommission)+'%')}
           </div>
           <div class="box">
             <h4>Cleaning</h4>
-            ${row('Last Cleaned', last?niceDate(last.date):'Never')}
-            ${row('Total Cleaning Records', cleaningCount)}
+            ${row('Last Cleaned', getLastCleaning(f.id)?niceDate(getLastCleaning(f.id).date):'Never')}
           </div>
         </div>
         ${f.notes? `<div class="box" style="margin-bottom:16px;"><h4>Notes</h4><div style="font-size:13px;">${esc(f.notes)}</div></div>` : ''}
-        <div class="box" style="margin-bottom:0;">
-          <h4>Inventory</h4>
-          <div style="font-size:13px;">${f.inventoryPdfData? `📎 ${esc(f.inventoryPdfName||'inventory.pdf')} — <a class="no-print" href="${f.inventoryPdfData}" download="${esc(f.inventoryPdfName||'inventory.pdf')}" style="color:var(--red);font-weight:600;">Download</a>` : 'No inventory file uploaded'}</div>
-        </div>
         <div class="rfoot"><span>Computer generated profile.</span><span>${esc(s.website)}</span></div>
       </div>
       </div>
     </div>
     <div class="modal-foot no-print">
       <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-      <button class="btn btn-ghost" onclick="printFlatCleaningReport('${f.id}')">${ICONS.print} Cleaning Report</button>
-      <button class="btn btn-dark" onclick="openFlatForm('${f.id}')">${ICONS.penEdit} Edit / Customize</button>
+      ${currentUser.role !== 'viewer' ? `<button class="btn btn-dark" onclick="openFlatForm('${f.id}')">${ICONS.penEdit} Edit</button>` : ''}
       <button class="btn btn-primary" onclick="window.print()">${ICONS.print} Print / PDF</button>
     </div>
   `;
@@ -1363,14 +1278,52 @@ function openFlatProfile(id){
 }
 
 /* ================= CLEANING SCHEDULE ================= */
-function quickLogCleaning(flatId){
-  openCleaningForm(null, flatId);
+function openCleaningForm(id, presetFlatId){
+  if(DB.flats.length===0){ toast('Add a flat first','err'); return; }
+  const c = id ? DB.cleanings.find(x=>x.id===id) : null;
+  const flatId = c ? c.flatId : (presetFlatId || DB.flats[0].id);
+  // Cleaner default name to logged in username
+  const defName = currentUser.role==='cleaner' ? currentUser.username : '';
+  openModal(`
+    <div class="modal-head"><h3>${c?'Edit Cleaning Record':'Log Cleaning'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Select Flat *</label>
+        <select id="cl_flat">${DB.flats.map(f=>`<option value="${f.id}" ${f.id===flatId?'selected':''}>${esc(f.name)}</option>`).join('')}</select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Date *</label><input id="cl_date" type="date" value="${c?c.date:todayISO()}"></div>
+        <div class="field"><label>Cleaner Name</label><input id="cl_name" value="${c?esc(c.cleanerName||''):defName}"></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="cl_notes" rows="2">${c?esc(c.notes||''):''}</textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="saveCleaning(${c?`'${c.id}'`:'null'})">Save</button>
+    </div>
+  `);
 }
-function renderCleaning(){
+
+function saveCleaning(id){
+  const date = document.getElementById('cl_date').value;
+  if(!date){ toast('Please pick a date','err'); return; }
+  const data = {
+    flatId: document.getElementById('cl_flat').value,
+    date,
+    cleanerName: document.getElementById('cl_name').value.trim(),
+    notes: document.getElementById('cl_notes').value.trim(),
+  };
+  if(id) Object.assign(DB.cleanings.find(x=>x.id===id), data);
+  else { data.id = uid(); DB.cleanings.push(data); }
+  persist('cleanings'); closeModal(); render(); toast('Cleaning record saved');
+}
+
+function deleteCleaning(id){
+  if(!confirm('Delete this cleaning record?')) return;
+  DB.cleanings = DB.cleanings.filter(x=>x.id!==id); persist('cleanings'); render(); toast('Record deleted','err');
+}
+
+function renderCleaning(role){
   ctx.cleanFlat = ctx.cleanFlat || 'all';
-  const rows = [...DB.cleanings]
-    .filter(c => ctx.cleanFlat==='all' || c.flatId===ctx.cleanFlat)
-    .sort((a,b)=> b.date.localeCompare(a.date));
+  const rows = [...DB.cleanings].filter(c => ctx.cleanFlat==='all' || c.flatId===ctx.cleanFlat).sort((a,b)=> b.date.localeCompare(a.date));
 
   return `
   <div class="card">
@@ -1381,13 +1334,10 @@ function renderCleaning(){
           <option value="all" ${ctx.cleanFlat==='all'?'selected':''}>All Flats</option>
           ${DB.flats.map(f=>`<option value="${f.id}" ${f.id===ctx.cleanFlat?'selected':''}>${esc(f.name)}</option>`).join('')}
         </select>
-        ${ctx.cleanFlat!=='all'? `<button class="btn btn-ghost btn-sm" onclick="printFlatCleaningReport('${ctx.cleanFlat}')">${ICONS.print} Print Report</button>`:''}
-        <button class="btn btn-primary btn-sm" onclick="openCleaningForm()">${ICONS.plus} Log Cleaning</button>
+        ${role!=='viewer' ? `<button class="btn btn-primary btn-sm" onclick="openCleaningForm()">${ICONS.plus} Log Cleaning</button>` : ''}
       </div>
     </div>
     <div class="card-body">
-      ${DB.flats.length===0? `<div class="hint">Add a flat first, then you can log cleaning records.</div>` :
-      rows.length===0? emptyState('spark','No cleaning records yet','Log when each flat is cleaned and by which cleaner — this powers the "days since cleaned" reminder.') : `
       <div class="tbl-wrap"><table>
         <thead><tr><th>Date</th><th>Flat</th><th>Cleaner</th><th>Notes</th><th></th></tr></thead>
         <tbody>
@@ -1399,77 +1349,17 @@ function renderCleaning(){
             <td>${esc(c.cleanerName||'—')}</td>
             <td>${esc(c.notes||'—')}</td>
             <td style="text-align:right;white-space:nowrap;">
+              ${role!=='viewer' ? `
               <button class="icon-btn" onclick="openCleaningForm('${c.id}')">${ICONS.penEdit}</button>
               <button class="icon-btn" onclick="deleteCleaning('${c.id}')" style="color:var(--red);">${ICONS.trash}</button>
+              ` : ''}
             </td>
-          </tr>`;
-        }).join('')}
-        </tbody>
-      </table></div>`}
-    </div>
-  </div>
-
-  ${DB.flats.length>0 ? `
-  <div class="card" style="margin-top:16px;">
-    <div class="card-head"><h3>Days Since Last Cleaned — All Flats</h3></div>
-    <div class="card-body">
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>Flat</th><th>Last Cleaned</th><th>Cleaner</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-        ${DB.flats.map(f=>{
-          const last = getLastCleaning(f.id);
-          return `<tr>
-            <td style="font-weight:600;">${esc(f.name)}</td>
-            <td>${last? niceDate(last.date) : '—'}</td>
-            <td>${last? esc(last.cleanerName||'—') : '—'}</td>
-            <td>${cleanBadge(f)}</td>
-            <td style="text-align:right;"><button class="icon-btn" title="Print cleaning report" onclick="printFlatCleaningReport('${f.id}')">${ICONS.print}</button></td>
           </tr>`;
         }).join('')}
         </tbody>
       </table></div>
     </div>
-  </div>` : ''}
-  `;
-}
-function deleteCleaning(id){
-  if(!confirm('Delete this cleaning record?')) return;
-  DB.cleanings = DB.cleanings.filter(x=>x.id!==id); persist('cleanings'); render(); toast('Record deleted','err');
-}
-function openCleaningForm(id, presetFlatId){
-  if(DB.flats.length===0){ toast('Add a flat first','err'); return; }
-  const c = id ? DB.cleanings.find(x=>x.id===id) : null;
-  const flatId = c ? c.flatId : (presetFlatId || DB.flats[0].id);
-  openModal(`
-    <div class="modal-head"><h3>${c?'Edit Cleaning Record':'Log Cleaning'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="field"><label>Flat *</label>
-        <select id="cl_flat">${DB.flats.map(f=>`<option value="${f.id}" ${f.id===flatId?'selected':''}>${esc(f.name)}</option>`).join('')}</select>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Cleaning Date *</label><input id="cl_date" type="date" value="${c?c.date:todayISO()}"></div>
-        <div class="field"><label>Cleaner Name</label><input id="cl_name" placeholder="e.g. Rahima Begum" value="${c?esc(c.cleanerName||''):''}"></div>
-      </div>
-      <div class="field"><label>Notes</label><textarea id="cl_notes" rows="2" placeholder="e.g. Deep clean, changed linens, fixed tap leak">${c?esc(c.notes||''):''}</textarea></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveCleaning(${c?`'${c.id}'`:'null'})">Save</button>
-    </div>
-  `);
-}
-function saveCleaning(id){
-  const date = document.getElementById('cl_date').value;
-  if(!date){ toast('Please pick a date','err'); return; }
-  const data = {
-    flatId: document.getElementById('cl_flat').value,
-    date,
-    cleanerName: document.getElementById('cl_name').value.trim(),
-    notes: document.getElementById('cl_notes').value.trim(),
-  };
-  if(id){ Object.assign(DB.cleanings.find(x=>x.id===id), data); }
-  else { data.id = uid(); DB.cleanings.push(data); }
-  persist('cleanings'); closeModal(); render(); toast('Cleaning record saved');
+  </div>`;
 }
 
 /* ================= GUESTS / BOOKING ================= */
@@ -1482,30 +1372,21 @@ function renderGuests(){
       <button class="btn btn-primary btn-sm" onclick="openGuestForm()">${ICONS.plus} New Guest Entry</button>
     </div>
     <div class="card-body">
-      ${DB.flats.length===0? `<div class="hint">Add a flat first, then you can create guest entries.</div>` : rows.length===0? emptyState('users','No guest entries yet','Create a new guest entry to log check-in/out and generate a receipt.') : `
+      ${DB.flats.length===0? `<div class="hint">Add a flat first, then you can create guest entries.</div>` : rows.length===0? emptyState('users','No guest entries yet','Create a new guest entry to log check-in/out.') : `
       <div class="tbl-wrap"><table>
-        <thead><tr><th></th><th>Guest</th><th>Flat</th><th>Check-in</th><th>Check-out</th><th>Days</th><th>Rate</th><th>Total Rent</th><th>Balance Due</th><th></th></tr></thead>
+        <thead><tr><th>Guest</th><th>Flat</th><th>Check-in</th><th>Check-out</th><th>Balance Due</th><th></th></tr></thead>
         <tbody>
         ${rows.map(g=>{
           const f = DB.flats.find(x=>x.id===g.flatId);
-          const days = guestDays(g);
-          const total = guestTotalRent(g);
           const due = guestBalanceDue(g);
-          const active = g.checkIn<=todayISO() && g.checkOut>=todayISO();
           return `<tr>
-            <td>${g.photo? `<img src="${g.photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">` : `<div style="width:34px;height:34px;border-radius:50%;background:#F0EFEC;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink-soft);font-size:12px;">${esc((g.name||'?').slice(0,1).toUpperCase())}</div>`}</td>
             <td><div style="font-weight:700;">${esc(g.name)}</div><div class="hint">${esc(g.phone||'')}</div></td>
             <td>${f?esc(f.name):'<i>Deleted flat</i>'}</td>
             <td>${niceDate(g.checkIn)}</td>
             <td>${niceDate(g.checkOut)}</td>
-            <td class="num">${days}</td>
-            <td style="white-space:nowrap;font-size:12.5px;">${g.rentType==='monthly'?'Monthly':'Per Day'}</td>
-            <td class="num">Tk ${fmtInt(total)}</td>
             <td class="num" style="color:${due>0?'var(--red)':'var(--green)'};font-weight:700;">Tk ${fmtInt(due)}</td>
             <td style="text-align:right;white-space:nowrap;">
               <button class="btn btn-sm btn-ghost" onclick="openGuestLedger('${g.id}')">Payments</button>
-              <button class="btn btn-sm btn-ghost" onclick="openReceipt('${g.id}')">Receipt</button>
-              <button class="icon-btn" title="Print profile" onclick="openGuestProfile('${g.id}')">${ICONS.file}</button>
               <button class="icon-btn" onclick="openGuestForm('${g.id}')">${ICONS.penEdit}</button>
               <button class="icon-btn" onclick="deleteGuest('${g.id}')" style="color:var(--red);">${ICONS.trash}</button>
             </td>
@@ -1516,12 +1397,7 @@ function renderGuests(){
     </div>
   </div>`;
 }
-function deleteGuest(id){
-  if(!confirm('Delete this guest entry? Its payment history will also be removed.')) return;
-  DB.guests = DB.guests.filter(x=>x.id!==id);
-  DB.guestPayments = DB.guestPayments.filter(x=>x.guestId!==id);
-  persist('guests'); persist('guestPayments'); render(); toast('Deleted','err');
-}
+
 function openGuestForm(id){
   const g = id ? DB.guests.find(x=>x.id===id) : null;
   if(DB.flats.length===0){ toast('Add a flat first','err'); return; }
@@ -1529,26 +1405,12 @@ function openGuestForm(id){
   openModal(`
     <div class="modal-head"><h3>${g?'Edit Guest':'New Guest Entry'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
-      <div class="field" style="display:flex;align-items:center;gap:14px;">
-        <img id="g_photo_preview" src="${g&&g.photo?g.photo:''}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;background:#F0EFEC;${g&&g.photo?'':'display:none;'}">
-        <div style="flex:1;">
-          <label>Guest Photo</label>
-          <input type="file" id="g_photo_file" accept="image/*" onchange="handleGuestPhotoUpload(event)">
-          <input type="hidden" id="g_photo_data" value="${g&&g.photo?esc(g.photo):''}">
-        </div>
-      </div>
       <div class="field"><label>Select Flat *</label>
         <select id="g_flat">${DB.flats.map(f=>`<option value="${f.id}" ${g&&g.flatId===f.id?'selected':''}>${esc(f.name)}</option>`).join('')}</select>
       </div>
       <div class="field-row">
         <div class="field"><label>Guest Name *</label><input id="g_name" value="${g?esc(g.name):''}"></div>
         <div class="field"><label>Mobile Number *</label><input id="g_phone" value="${g?esc(g.phone||''):''}"></div>
-      </div>
-      <div class="field"><label>Present Address</label><input id="g_addr_cur" value="${g?esc(g.presentAddress||''):''}"></div>
-      <div class="field"><label>Permanent Address</label><input id="g_addr_perm" value="${g?esc(g.permanentAddress||''):''}"></div>
-      <div class="field-row">
-        <div class="field"><label>Occupation</label><input id="g_occ" value="${g?esc(g.occupation||''):''}"></div>
-        <div class="field"><label>Number of Guests</label><input id="g_count" type="number" min="1" value="${g?g.guestCount||1:1}"></div>
       </div>
       <div class="field-row">
         <div class="field"><label>Check-in *</label><input id="g_in" type="date" value="${g?g.checkIn:todayISO()}"></div>
@@ -1566,399 +1428,114 @@ function openGuestForm(id){
         <div class="field"><label>Service Charge (Tk)</label><input id="g_service" type="number" value="${g?g.serviceCharge||'':''}" placeholder="e.g. 500"></div>
       </div>
       <div class="field"><label>Advance Paid (Tk)</label><input id="g_advance" type="number" value="${g?g.advancePaid||0:0}"></div>
-      <div class="field"><label>Notes</label><textarea id="g_notes" rows="2">${g?esc(g.notes||''):''}</textarea></div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveGuest(${g?`'${g.id}'`:'null'})">Save</button>
     </div>
   `);
   toggleGuestRentFields();
 }
+
 function toggleGuestRentFields(){
   const type = document.getElementById('g_rentType').value;
   document.getElementById('g_dailyField').style.display = type==='daily' ? '' : 'none';
   document.getElementById('g_monthlyField').style.display = type==='monthly' ? '' : 'none';
 }
-function handleGuestPhotoUpload(evt){
-  const file = evt.target.files[0]; if(!file) return;
-  if(file.size > 2*1024*1024){ toast('Please choose an image under 2MB','err'); evt.target.value=''; return; }
-  const reader = new FileReader();
-  reader.onload = e=>{
-    document.getElementById('g_photo_data').value = e.target.result;
-    const prev = document.getElementById('g_photo_preview');
-    prev.src = e.target.result; prev.style.display = '';
-  };
-  reader.readAsDataURL(file);
-}
+
 function saveGuest(id){
   const name = document.getElementById('g_name').value.trim();
   const phone = document.getElementById('g_phone').value.trim();
   const cin = document.getElementById('g_in').value;
   const cout = document.getElementById('g_out').value;
   const rentType = document.getElementById('g_rentType').value;
-  const rate = Number(document.getElementById('g_rate').value)||0;
-  const monthlyRate = Number(document.getElementById('g_monthlyRate').value)||0;
-  const serviceCharge = Number(document.getElementById('g_service').value)||0;
-  const flatId = document.getElementById('g_flat').value;
-  if(!name || !phone || !cin || !cout){ toast('Please fill all required (*) fields','err'); return; }
-  if(rentType==='daily' && !rate){ toast('Please enter the rate per day','err'); return; }
-  if(rentType==='monthly' && !monthlyRate){ toast('Please enter the monthly rent','err'); return; }
-  if(cout < cin){ toast('Check-out date must be after check-in','err'); return; }
-  const conflict = findBookingConflict(flatId, cin, cout, id||null);
-  if(conflict){
-    toast(`Dates clash with ${conflict.name}'s booking (${niceDate(conflict.checkIn)} – ${niceDate(conflict.checkOut)}) in this flat. Choose different dates or another flat.`, 'err');
-    return;
-  }
+  if(!name || !phone || !cin || !cout) return toast('Fill all required fields','err');
+  
   const data = {
-    flatId,
-    name, phone,
-    photo: document.getElementById('g_photo_data').value || '',
-    presentAddress: document.getElementById('g_addr_cur').value.trim(),
-    permanentAddress: document.getElementById('g_addr_perm').value.trim(),
-    occupation: document.getElementById('g_occ').value.trim(),
-    guestCount: Number(document.getElementById('g_count').value)||1,
-    checkIn: cin, checkOut: cout,
-    rentType,
-    perDayRate: rate,
-    monthlyRate: monthlyRate,
-    serviceCharge: serviceCharge,
-    advancePaid: Number(document.getElementById('g_advance').value)||0,
-    notes: document.getElementById('g_notes').value.trim(),
+    flatId: document.getElementById('g_flat').value,
+    name, phone, checkIn: cin, checkOut: cout, rentType,
+    perDayRate: Number(document.getElementById('g_rate').value)||0,
+    monthlyRate: Number(document.getElementById('g_monthlyRate').value)||0,
+    serviceCharge: Number(document.getElementById('g_service').value)||0,
+    advancePaid: Number(document.getElementById('g_advance').value)||0
   };
-  if(id){ Object.assign(DB.guests.find(x=>x.id===id), data); }
-  else { data.id = uid(); data.createdAt = todayISO(); DB.guests.push(data); }
+  
+  if(id) Object.assign(DB.guests.find(x=>x.id===id), data);
+  else { data.id = uid(); DB.guests.push(data); }
   persist('guests'); closeModal(); render(); toast('Guest entry saved');
 }
 
-function openReceipt(id){
-  const g = DB.guests.find(x=>x.id===id); if(!g) return;
-  const f = DB.flats.find(x=>x.id===g.flatId);
-  const days = guestDays(g);
-  const total = guestTotalRent(g);
-  const due = Math.max(0, total - guestTotalReceived(g));
-  const s = DB.settings;
-  const receiptNo = 'DH-' + g.id.slice(-6).toUpperCase();
-  const html = `
-    <div class="modal-head no-print"><h3>Money Receipt</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body" style="padding:0;">
-      <div id="printArea">
-      <div class="receipt-doc">
-        <div class="rhead">
-          <div>
-            <div class="co">Dhaka<span>Home</span> USA Ltd.</div>
-            <div class="meta">${esc(s.address)}<br>${esc(s.email)} • ${esc(s.website)}</div>
-          </div>
-          <div class="rtitle">
-            <div class="t">Money Receipt</div>
-            <div class="no">No: ${receiptNo}<br>Date: ${niceDate(todayISO())}</div>
-          </div>
-        </div>
-        <div class="rgrid">
-          <div class="box">
-            <h4>Guest Information</h4>
-            <div class="row"><span>Name</span><b>${esc(g.name)}</b></div>
-            <div class="row"><span>Mobile</span><b>${esc(g.phone)}</b></div>
-            <div class="row"><span>Occupation</span><b>${esc(g.occupation||'—')}</b></div>
-            <div class="row"><span>No. of Guests</span><b>${g.guestCount}</b></div>
-            <div class="row"><span>Present Address</span><b>${esc(g.presentAddress||'—')}</b></div>
-            <div class="row"><span>Permanent Address</span><b>${esc(g.permanentAddress||'—')}</b></div>
-          </div>
-          <div class="box">
-            <h4>Booking Information</h4>
-            <div class="row"><span>Flat</span><b>${f?esc(f.name):'—'}</b></div>
-            <div class="row"><span>Check-in</span><b>${niceDate(g.checkIn)}</b></div>
-            <div class="row"><span>Check-out</span><b>${niceDate(g.checkOut)}</b></div>
-            <div class="row"><span>Total Days</span><b>${days}</b></div>
-            <div class="row"><span>Rent System</span><b>${guestRateLabel(g)}</b></div>
-          </div>
-        </div>
-        <table class="rtable">
-          <thead><tr><th>Particulars</th><th style="text-align:right;">Amount (Tk)</th></tr></thead>
-          <tbody>
-            <tr><td>${g.rentType==='monthly'?`Rent (${(days/30).toFixed(1)} months x ${guestRateLabel(g)})`:`Rent (${days} days x Tk ${fmt(g.perDayRate)})`}</td><td style="text-align:right;">Tk ${fmt(g.rentType==='monthly'?Math.round((Number(g.monthlyRate)||0)*(days/30)):days*Number(g.perDayRate||0))}</td></tr>
-            ${Number(g.serviceCharge||0)>0? `<tr><td>Service Charge</td><td style="text-align:right;">Tk ${fmt(g.serviceCharge)}</td></tr>` : ''}
-            <tr><td>Total Received (Advance + Payments)</td><td style="text-align:right;">− Tk ${fmt(guestTotalReceived(g))}</td></tr>
-          </tbody>
-        </table>
-        <div class="rtotal">
-          <table>
-            <tr><td>Total Bill</td><td style="text-align:right;">Tk ${fmt(total)}</td></tr>
-            <tr><td>Total Received</td><td style="text-align:right;">Tk ${fmt(guestTotalReceived(g))}</td></tr>
-            <tr class="grand"><td>Balance Due</td><td style="text-align:right;">Tk ${fmt(due)}</td></tr>
-          </table>
-        </div>
-        <div class="sign">
-          <div class="ln">Guest Signature</div>
-          <div class="ln">For DhakaHome USA Ltd.</div>
-        </div>
-        <div class="rfoot"><span>Computer generated receipt.</span><span>${esc(s.website)}</span></div>
-      </div>
-      </div>
-    </div>
-    <div class="modal-foot no-print">
-      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-      <button class="btn btn-dark" onclick="window.print()">${ICONS.print} Print / PDF</button>
-    </div>
-  `;
-  openModal(html, true);
+function deleteGuest(id){
+  if(!confirm('Delete this guest entry?')) return;
+  DB.guests = DB.guests.filter(x=>x.id!==id);
+  DB.guestPayments = DB.guestPayments.filter(x=>x.guestId!==id);
+  persist(); render(); toast('Deleted','err');
 }
 
-/* ================= GUEST PROFILE (printable) ================= */
-function openGuestProfile(id){
-  const g = DB.guests.find(x=>x.id===id); if(!g) return;
-  const f = DB.flats.find(x=>x.id===g.flatId);
-  const s = DB.settings;
-  const html = `
-    <div class="modal-head no-print"><h3>Guest Profile</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body" style="padding:0;">
-      <div id="printArea">
-      <div class="receipt-doc">
-        <div class="rhead">
-          <div>
-            <div class="co">Dhaka<span>Home</span> USA Ltd.</div>
-            <div class="meta">${esc(s.address)}<br>${esc(s.email)} • ${esc(s.website)}</div>
-          </div>
-          <div class="rtitle">
-            <div class="t">Guest Profile</div>
-            <div class="no">Created: ${niceDate(g.createdAt||todayISO())}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:18px;align-items:flex-start;margin-bottom:18px;">
-          ${g.photo? `<img src="${g.photo}" style="width:110px;height:110px;border-radius:10px;object-fit:cover;border:1px solid var(--line);">` : `<div style="width:110px;height:110px;border-radius:10px;background:#F0EFEC;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:12px;">No Photo</div>`}
-          <div style="flex:1;">
-            <div style="font-family:'Poppins';font-weight:800;font-size:19px;">${esc(g.name)}</div>
-            <div class="hint" style="margin-top:2px;">${esc(g.phone||'')}${g.occupation? ' • '+esc(g.occupation):''}</div>
-          </div>
-        </div>
-        <div class="rgrid">
-          <div class="box">
-            <h4>Guest Information</h4>
-            <div class="row"><span>Mobile</span><b>${esc(g.phone)}</b></div>
-            <div class="row"><span>Occupation</span><b>${esc(g.occupation||'—')}</b></div>
-            <div class="row"><span>No. of Guests</span><b>${g.guestCount}</b></div>
-            <div class="row"><span>Present Address</span><b>${esc(g.presentAddress||'—')}</b></div>
-            <div class="row"><span>Permanent Address</span><b>${esc(g.permanentAddress||'—')}</b></div>
-          </div>
-          <div class="box">
-            <h4>Booking Information</h4>
-            <div class="row"><span>Flat</span><b>${f?esc(f.name):'—'}</b></div>
-            <div class="row"><span>Check-in</span><b>${niceDate(g.checkIn)}</b></div>
-            <div class="row"><span>Check-out</span><b>${niceDate(g.checkOut)}</b></div>
-            <div class="row"><span>Total Days</span><b>${guestDays(g)}</b></div>
-            <div class="row"><span>Rent System</span><b>${guestRateLabel(g)}</b></div>
-            <div class="row"><span>Total Bill</span><b>Tk ${fmt(guestTotalRent(g))}</b></div>
-          </div>
-        </div>
-        ${g.notes? `<div class="box" style="margin-top:2px;"><h4>Notes</h4><div style="font-size:13px;">${esc(g.notes)}</div></div>`:''}
-        <div class="rfoot"><span>Computer generated guest profile.</span><span>${esc(s.website)}</span></div>
-      </div>
-      </div>
-    </div>
-    <div class="modal-foot no-print">
-      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-      <button class="btn btn-dark" onclick="window.print()">${ICONS.print} Print / PDF</button>
-    </div>
-  `;
-  openModal(html, true);
-}
-
-/* ================= GUEST LEDGER / ACCOUNT SUMMARY ================= */
+/* ================= GUEST LEDGER ================= */
 function openGuestLedger(id){
   const g = DB.guests.find(x=>x.id===id); if(!g) return;
-  const f = DB.flats.find(x=>x.id===g.flatId);
   const ledger = guestLedger(id);
-  const totalBill = guestTotalRent(g);
-  const received = guestTotalReceived(g);
-  const rentPaid = guestRentPaid(g);
-  const avail = guestAvailableAdvance(g);
-  const due = totalBill - rentPaid;
+  const due = guestBalanceDue(g);
   openModal(`
     <div class="modal-head"><h3>Account Summary — ${esc(g.name)}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
-      <div class="hint" style="margin-bottom:10px;">${f?esc(f.name):''} • ${niceDate(g.checkIn)} – ${niceDate(g.checkOut)} • ${guestRateLabel(g)}</div>
       <div class="rgrid" style="margin-bottom:16px;">
         <div class="box">
           <h4>Billing</h4>
-          <div class="row"><span>Total Bill</span><b>Tk ${fmt(totalBill)}</b></div>
-          <div class="row"><span>Rent Paid (incl. adjustments)</span><b>Tk ${fmt(rentPaid)}</b></div>
+          <div class="row"><span>Total Bill</span><b>Tk ${fmt(guestTotalRent(g))}</b></div>
           <div class="row"><span>Balance Due</span><b style="color:${due>0?'var(--red)':'var(--green)'}">Tk ${fmt(due)}</b></div>
         </div>
-        <div class="box">
-          <h4>Advance</h4>
-          <div class="row"><span>Advance at Booking</span><b>Tk ${fmt(g.advancePaid||0)}</b></div>
-          <div class="row"><span>Total Received (all-time)</span><b>Tk ${fmt(received)}</b></div>
-          <div class="row"><span>Available Advance (unused)</span><b>Tk ${fmt(avail)}</b></div>
-        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <b style="font-size:13.5px;">Payment History</b>
-        <button class="btn btn-primary btn-sm" onclick="openAddGuestPayment('${id}')">${ICONS.plus} Add Payment</button>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <b>Payment History</b>
+        <button class="btn btn-primary btn-sm" onclick="openAddGuestPayment('${id}')">+ Add Payment</button>
       </div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Date</th><th>Type</th><th class="num">Amount</th><th>Note</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Type</th><th class="num">Amount</th><th></th></tr></thead>
         <tbody>
-        ${ledger.length===0? `<tr><td colspan="5" class="hint" style="text-align:center;padding:16px;">No payments recorded yet — booking advance: Tk ${fmt(g.advancePaid||0)}</td></tr>` :
-          ledger.map(p=>`<tr>
-            <td>${niceDate(p.date)}</td>
-            <td>${p.type==='advance'?'Advance':p.type==='rent'?'Rent Payment':'Advance → Rent'}</td>
-            <td class="num">Tk ${fmt(p.amount)}</td>
-            <td>${esc(p.note||'—')}</td>
-            <td style="text-align:right;white-space:nowrap;">
-              <button class="btn btn-sm btn-ghost" onclick="openGuestPaymentReceipt('${p.id}')">Receipt</button>
-              <button class="icon-btn" onclick="deleteGuestPayment('${p.id}','${id}')" style="color:var(--red);">${ICONS.trash}</button>
-            </td>
-          </tr>`).join('')}
+        ${ledger.map(p=>`<tr>
+          <td>${niceDate(p.date)}</td><td>${p.type}</td><td class="num">Tk ${fmt(p.amount)}</td>
+          <td style="text-align:right;"><button class="icon-btn" onclick="deleteGuestPayment('${p.id}','${id}')" style="color:var(--red);">${ICONS.trash}</button></td>
+        </tr>`).join('')}
         </tbody>
       </table></div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-    </div>
   `, true);
 }
-function deleteGuestPayment(paymentId, guestId){
-  if(!confirm('Delete this payment record?')) return;
-  const p = DB.guestPayments.find(x=>x.id===paymentId);
-  // If this payment auto-created a linked rent entry (advance->rent adjustment), remove that entry too.
-  if(p && p.linkedEntryId){
-    DB.entries = DB.entries.filter(e=>e.id!==p.linkedEntryId);
-  }
-  DB.guestPayments = DB.guestPayments.filter(x=>x.id!==paymentId);
-  persist('guestPayments'); persist('entries'); openGuestLedger(guestId); toast('Payment deleted','err');
-}
+
 function openAddGuestPayment(guestId){
-  const g = DB.guests.find(x=>x.id===guestId); if(!g) return;
-  const avail = guestAvailableAdvance(g);
   openModal(`
-    <div class="modal-head"><h3>Add Payment — ${esc(g.name)}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-head"><h3>Add Payment</h3><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="field"><label>Date *</label><input id="gp_date" type="date" value="${todayISO()}"></div>
-      <div class="field"><label>Payment Type *</label>
-        <select id="gp_type" onchange="document.getElementById('gp_advHint').style.display=this.value==='adjustment'?'':'none';">
-          <option value="rent">Rent Payment (new cash, counted against bill)</option>
-          <option value="advance">Additional Advance (new cash, held on account)</option>
-          <option value="adjustment">Adjust Advance → Rent (no new cash)</option>
-        </select>
-        <div id="gp_advHint" class="hint" style="display:none;margin-top:5px;">Available advance to adjust: Tk ${fmt(avail)}</div>
-      </div>
+      <div class="field"><label>Type</label><select id="gp_type"><option value="rent">Rent Payment</option><option value="advance">Advance</option></select></div>
       <div class="field"><label>Amount (Tk) *</label><input id="gp_amount" type="number"></div>
-      <div class="field"><label>Note</label><input id="gp_note" placeholder="e.g. Monthly rent for August"></div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveGuestPayment('${guestId}')">Save & Generate Receipt</button>
-    </div>
+    <div class="modal-foot"><button class="btn btn-primary" onclick="saveGuestPayment('${guestId}')">Save</button></div>
   `);
 }
 function saveGuestPayment(guestId){
-  const g = DB.guests.find(x=>x.id===guestId); if(!g) return;
-  const f = DB.flats.find(x=>x.id===g.flatId);
-  const date = document.getElementById('gp_date').value;
-  const type = document.getElementById('gp_type').value;
-  const amount = Number(document.getElementById('gp_amount').value);
-  const note = document.getElementById('gp_note').value.trim();
-  if(!date || !amount){ toast('Please fill date and amount','err'); return; }
-  if(type==='adjustment'){
-    const avail = guestAvailableAdvance(g);
-    if(amount > avail){ toast(`Only Tk ${fmt(avail)} of advance is available to adjust`,'err'); return; }
-  }
-  const rec = {id:uid(), guestId, date, type, amount, note};
-  // When advance is adjusted against rent, automatically create a matching
-  // Income & Expense Entry (type: rent) for this guest's flat so it flows
-  // straight into Income & Expense Entry / House Report / Owner Report.
-  if(type==='adjustment' && f){
-    const entryId = uid();
-    DB.entries.push({
-      id: entryId,
-      flatId: f.id,
-      date,
-      month: date.slice(0,7),
-      particular: note || `Advance adjusted to rent — ${g.name}`,
-      type: 'rent',
-      amount
-    });
-    rec.linkedEntryId = entryId;
-  }
-  DB.guestPayments.push(rec);
-  persist('guestPayments'); persist('entries'); closeModal(); toast('Payment saved');
-  openGuestPaymentReceipt(rec.id);
+  DB.guestPayments.push({
+    id:uid(), guestId, date:document.getElementById('gp_date').value,
+    type:document.getElementById('gp_type').value, amount:Number(document.getElementById('gp_amount').value)
+  });
+  persist('guestPayments'); closeModal(); openGuestLedger(guestId); toast('Saved');
 }
-function openGuestPaymentReceipt(paymentId){
-  const p = DB.guestPayments.find(x=>x.id===paymentId); if(!p) return;
-  const g = DB.guests.find(x=>x.id===p.guestId); if(!g) return;
-  const f = DB.flats.find(x=>x.id===g.flatId);
-  const s = DB.settings;
-  const typeLabel = p.type==='advance'?'Additional Advance':p.type==='rent'?'Rent Payment':'Advance Adjusted to Rent';
-  const receiptNo = 'DH-PAY-' + p.id.slice(-6).toUpperCase();
-  const due = guestBalanceDue(g);
-  const html = `
-    <div class="modal-head no-print"><h3>Payment Receipt</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body" style="padding:0;">
-      <div id="printArea">
-      <div class="receipt-doc">
-        <div class="rhead">
-          <div>
-            <div class="co">Dhaka<span>Home</span> USA Ltd.</div>
-            <div class="meta">${esc(s.address)}<br>${esc(s.email)} • ${esc(s.website)}</div>
-          </div>
-          <div class="rtitle">
-            <div class="t">Payment Receipt</div>
-            <div class="no">No: ${receiptNo}<br>Date: ${niceDate(p.date)}</div>
-          </div>
-        </div>
-        <div class="rgrid">
-          <div class="box">
-            <h4>Guest</h4>
-            <div class="row"><span>Name</span><b>${esc(g.name)}</b></div>
-            <div class="row"><span>Mobile</span><b>${esc(g.phone||'—')}</b></div>
-            <div class="row"><span>Flat</span><b>${f?esc(f.name):'—'}</b></div>
-          </div>
-          <div class="box">
-            <h4>Payment</h4>
-            <div class="row"><span>Type</span><b>${typeLabel}</b></div>
-            <div class="row"><span>Amount</span><b>Tk ${fmt(p.amount)}</b></div>
-            <div class="row"><span>Note</span><b>${esc(p.note||'—')}</b></div>
-          </div>
-        </div>
-        <div class="rtotal">
-          <table>
-            <tr><td>Amount Received</td><td style="text-align:right;">Tk ${fmt(p.amount)}</td></tr>
-            <tr class="grand"><td>Remaining Balance Due</td><td style="text-align:right;">Tk ${fmt(Math.max(0,due))}</td></tr>
-          </table>
-        </div>
-        <div class="sign">
-          <div class="ln">Guest Signature</div>
-          <div class="ln">For DhakaHome USA Ltd.</div>
-        </div>
-        <div class="rfoot"><span>Computer generated receipt.</span><span>${esc(s.website)}</span></div>
-      </div>
-      </div>
-    </div>
-    <div class="modal-foot no-print">
-      <button class="btn btn-ghost" onclick="openGuestLedger('${g.id}')">Back to Summary</button>
-      <button class="btn btn-dark" onclick="window.print()">${ICONS.print} Print / PDF</button>
-    </div>
-  `;
-  openModal(html, true);
+function deleteGuestPayment(pid, gid){
+  DB.guestPayments = DB.guestPayments.filter(x=>x.id!==pid);
+  persist('guestPayments'); openGuestLedger(gid); toast('Deleted');
 }
 
 /* ================= ENTRIES (Income & Expense) ================= */
 function renderEntries(){
   ctx.entryMonth = ctx.entryMonth || curMonth();
   ctx.entryFlat = ctx.entryFlat || (DB.flats[0] ? DB.flats[0].id : null);
-  const month = ctx.entryMonth;
-  const flatId = ctx.entryFlat;
+  const month = ctx.entryMonth, flatId = ctx.entryFlat;
 
-  if(DB.flats.length===0){
-    return `<div class="card"><div class="card-body">${emptyState('edit','Add a flat first','You need at least one flat before recording income & expense entries.')}</div></div>`;
-  }
+  if(DB.flats.length===0) return `<div class="card"><div class="card-body">${emptyState('edit','Add a flat first','Required before adding entries.')}</div></div>`;
 
   const list = DB.entries.filter(e=>e.month===month && e.flatId===flatId).sort((a,b)=>a.date.localeCompare(b.date));
-  const totalRent = list.filter(e=>e.type==='rent').reduce((s,e)=>s+Number(e.amount),0);
-  const totalCommon = list.filter(e=>e.type==='common').reduce((s,e)=>s+Number(e.amount),0);
-  const totalOwner = list.filter(e=>e.type==='owner').reduce((s,e)=>s+Number(e.amount),0);
-
+  
   return `
   <div class="card">
     <div class="card-head">
@@ -1976,7 +1553,6 @@ function renderEntries(){
       </div>
     </div>
     <div class="card-body">
-      ${list.length===0? emptyState('edit','No entries for this month','Add rent received, common expense, or owner expense entries.') : `
       <div class="tbl-wrap"><table>
         <thead><tr><th>Date</th><th>Particulars</th><th>Type</th><th class="num">Amount (Tk)</th><th></th></tr></thead>
         <tbody>
@@ -1984,80 +1560,51 @@ function renderEntries(){
           <tr>
             <td>${niceDate(e.date)}</td>
             <td>${esc(e.particular)}</td>
-            <td>${typeBadge(e.type)}</td>
+            <td>${e.type}</td>
             <td class="num">${fmt(e.amount)}</td>
-            <td style="text-align:right;">
-              <button class="icon-btn" onclick="openEntryForm('${e.id}')">${ICONS.penEdit}</button>
-              <button class="icon-btn" onclick="deleteEntry('${e.id}')" style="color:var(--red);">${ICONS.trash}</button>
-            </td>
+            <td style="text-align:right;"><button class="icon-btn" onclick="deleteEntry('${e.id}')" style="color:var(--red);">${ICONS.trash}</button></td>
           </tr>`).join('')}
         </tbody>
-        <tfoot>
-          <tr><td colspan="3">Total Rent Received</td><td class="num">${fmt(totalRent)}</td><td></td></tr>
-          <tr><td colspan="3">Total Common Expense</td><td class="num">${fmt(totalCommon)}</td><td></td></tr>
-          <tr><td colspan="3">Total Owner Expense</td><td class="num">${fmt(totalOwner)}</td><td></td></tr>
-        </tfoot>
-      </table></div>`}
+      </table></div>
     </div>
   </div>`;
 }
-function typeBadge(t){
-  if(t==='rent') return `<span class="badge badge-avail"><span class="dot"></span>Rent</span>`;
-  if(t==='common') return `<span class="badge" style="background:var(--amber-bg);color:var(--amber);"><span class="dot" style="background:var(--amber);"></span>Common Exp.</span>`;
-  return `<span class="badge badge-unavail"><span class="dot"></span>Owner Exp.</span>`;
-}
-function deleteEntry(id){
-  if(!confirm('Delete this entry?')) return;
-  DB.entries = DB.entries.filter(x=>x.id!==id); persist('entries'); render(); toast('Deleted','err');
-}
-function openEntryForm(id){
-  const e = id ? DB.entries.find(x=>x.id===id) : null;
+
+function openEntryForm(){
   openModal(`
-    <div class="modal-head"><h3>${e?'Edit Entry':'New Income / Expense Entry'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-head"><h3>New Entry</h3><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
-      <div class="field"><label>Date *</label><input id="e_date" type="date" value="${e?e.date:todayISO()}"></div>
-      <div class="field"><label>Particulars *</label>
-        <input id="e_part" list="particularsList" placeholder="e.g. Service charge, Gas & Garbage bill, Rent received..." value="${e?esc(e.particular):''}">
-        <datalist id="particularsList">
-          ${(DB.settings.particulars||[]).map(p=>`<option value="${esc(p)}">`).join('')}
-        </datalist>
+      <div class="field"><label>Date *</label><input id="e_date" type="date" value="${todayISO()}"></div>
+      <div class="field"><label>Particulars *</label><input id="e_part" list="particularsList">
+        <datalist id="particularsList">${(DB.settings.particulars||[]).map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
       </div>
       <div class="field"><label>Type *</label>
-        <select id="e_type">
-          <option value="rent" ${e&&e.type==='rent'?'selected':''}>Rent Received (Income)</option>
-          <option value="common" ${e&&e.type==='common'?'selected':''}>Common / House Expense</option>
-          <option value="owner" ${e&&e.type==='owner'?'selected':''}>Owner Personal Expense</option>
-        </select>
+        <select id="e_type"><option value="rent">Rent Received</option><option value="common">Common Expense</option><option value="owner">Owner Exp.</option></select>
       </div>
-      <div class="field"><label>Amount (Tk) *</label><input id="e_amount" type="number" value="${e?e.amount:''}"></div>
+      <div class="field"><label>Amount (Tk) *</label><input id="e_amount" type="number"></div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEntry(${e?`'${e.id}'`:'null'})">Save</button>
-    </div>
+    <div class="modal-foot"><button class="btn btn-primary" onclick="saveEntry()">Save</button></div>
   `);
 }
-function saveEntry(id){
-  const date = document.getElementById('e_date').value;
-  const particular = document.getElementById('e_part').value.trim();
-  const amount = Number(document.getElementById('e_amount').value);
-  if(!date || !particular || !amount){ toast('Please fill all fields','err'); return; }
-  const data = { date, particular, type: document.getElementById('e_type').value, amount, flatId: ctx.entryFlat, month: date.slice(0,7) };
-  if(id){ Object.assign(DB.entries.find(x=>x.id===id), data); }
-  else { data.id = uid(); DB.entries.push(data); }
-  persist('entries'); closeModal(); render(); toast('Entry saved');
+
+function saveEntry(){
+  const d = document.getElementById('e_date').value;
+  DB.entries.push({ id:uid(), date:d, month:d.slice(0,7), flatId:ctx.entryFlat, particular:document.getElementById('e_part').value, type:document.getElementById('e_type').value, amount:Number(document.getElementById('e_amount').value) });
+  persist('entries'); closeModal(); render(); toast('Saved');
 }
 
-/* ================= HOUSE REPORT (per flat, matches page 1 of sample) ================= */
+function deleteEntry(id){
+  DB.entries = DB.entries.filter(x=>x.id!==id); persist('entries'); render(); toast('Deleted');
+}
+
+/* ================= HOUSE REPORT ================= */
 function renderHouseReport(){
   ctx.entryMonth = ctx.entryMonth || curMonth();
   ctx.entryFlat = ctx.entryFlat || (DB.flats[0]?DB.flats[0].id:null);
   const month = ctx.entryMonth, flatId = ctx.entryFlat;
-  if(DB.flats.length===0){
-    return `<div class="card"><div class="card-body">${emptyState('file','No flats yet','Add flats and entries first.')}</div></div>`;
-  }
-  const flat = DB.flats.find(f=>f.id===flatId);
-  const list = DB.entries.filter(e=>e.month===month && e.flatId===flatId).sort((a,b)=>a.date.localeCompare(b.date));
+  if(DB.flats.length===0) return `<div class="card"><div class="card-body">Add a flat first.</div></div>`;
+  
+  const list = DB.entries.filter(e=>e.month===month && e.flatId===flatId);
   const totalRent = list.filter(e=>e.type==='rent').reduce((s,e)=>s+Number(e.amount),0);
   const totalCommon = list.filter(e=>e.type==='common').reduce((s,e)=>s+Number(e.amount),0);
 
@@ -2065,7 +1612,7 @@ function renderHouseReport(){
   <div class="card">
     <div class="card-head">
       <h3>House Report</h3>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;align-items:center;">
         <select style="width:auto;min-width:220px;" onchange="ctx.entryFlat=this.value; render();">
           ${DB.flats.map(f=>`<option value="${f.id}" ${f.id===flatId?'selected':''}>${esc(f.name)}</option>`).join('')}
         </select>
@@ -2074,46 +1621,23 @@ function renderHouseReport(){
           <div class="month-label">${monthLabel(month)}</div>
           <button class="icon-btn" onclick="ctx.entryMonth=shiftMonth(ctx.entryMonth,1); render();">›</button>
         </div>
-        <button class="btn btn-dark btn-sm" onclick="printHouseReport()">${ICONS.print} Print</button>
+        <button class="btn btn-dark btn-sm" onclick="printHTML(document.getElementById('hr_print').innerHTML)">Print</button>
       </div>
     </div>
-    <div class="card-body">
-      <div id="houseReportPrintArea">
-        <div style="margin-bottom:14px;">
-          <div style="font-family:'Poppins';font-weight:800;font-size:16px;">${flat?esc(flat.name):''}</div>
-          <div class="hint">Month of ${monthLabel(month)}</div>
-        </div>
-        <div class="tbl-wrap"><table>
-          <thead><tr><th>Date</th><th>Particulars</th><th class="num">Credit (Rent Received)</th><th class="num">Common Expense</th><th class="num">Owner Expense</th></tr></thead>
-          <tbody>
-          ${list.length===0? `<tr><td colspan="5" class="hint" style="text-align:center;padding:24px;">No data for this month</td></tr>` :
-            list.map(e=>`<tr>
-              <td>${niceDate(e.date)}</td>
-              <td>${esc(e.particular)}</td>
-              <td class="num">${e.type==='rent'?fmt(e.amount):''}</td>
-              <td class="num">${e.type==='common'?fmt(e.amount):''}</td>
-              <td class="num">${e.type==='owner'?fmt(e.amount):''}</td>
-            </tr>`).join('')
-          }
-          </tbody>
-          <tfoot>
-            <tr><td colspan="2">Total</td><td class="num">${fmt(totalRent)}</td><td class="num">${fmt(totalCommon)}</td><td class="num">${fmt(list.filter(e=>e.type==='owner').reduce((s,e)=>s+Number(e.amount),0))}</td></tr>
-          </tfoot>
-        </table></div>
-      </div>
+    <div class="card-body" id="hr_print">
+      <div style="margin-bottom:14px; font-weight:800;">${DB.flats.find(f=>f.id===flatId)?.name}</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Particulars</th><th class="num">Rent</th><th class="num">Common Exp.</th></tr></thead>
+        <tbody>
+        ${list.map(e=>`<tr><td>${esc(e.particular)}</td><td class="num">${e.type==='rent'?fmt(e.amount):''}</td><td class="num">${e.type==='common'?fmt(e.amount):''}</td></tr>`).join('')}
+        </tbody>
+        <tfoot><tr><td>Total</td><td class="num">${fmt(totalRent)}</td><td class="num">${fmt(totalCommon)}</td></tr></tfoot>
+      </table></div>
     </div>
   </div>`;
 }
-function printHouseReport(){
-  const area = document.getElementById('houseReportPrintArea');
-  const w = area.innerHTML;
-  const holder = document.createElement('div'); holder.id='printArea'; holder.innerHTML = `<div style="padding:10px;">${w}</div>`;
-  document.body.appendChild(holder);
-  window.print();
-  setTimeout(()=>document.body.removeChild(holder), 500);
-}
 
-/* ================= OWNER PAYMENT REPORT (matches page 2 of sample) ================= */
+/* ================= OWNER REPORT (Pct vs Fixed Support) ================= */
 function computeOwnerReport(flatId, month){
   const flat = DB.flats.find(f=>f.id===flatId);
   const list = DB.entries.filter(e=>e.month===month && e.flatId===flatId);
@@ -2121,39 +1645,34 @@ function computeOwnerReport(flatId, month){
   const commonExp = list.filter(e=>e.type==='common').reduce((s,e)=>s+Number(e.amount),0);
   const personalExp = list.filter(e=>e.type==='owner').reduce((s,e)=>s+Number(e.amount),0);
   const totalIncome = totalRent - commonExp;
-  const commPct = (flat && flat.commissionPct!=null) ? flat.commissionPct : DB.settings.defaultCommission;
-  const dhCommission = totalIncome * (commPct/100);
+  
+  let dhCommission = 0;
+  if(flat && flat.commType === 'fixed') {
+    dhCommission = totalIncome > 0 ? (Number(flat.commValue)||0) : 0;
+  } else {
+    dhCommission = totalIncome * ((flat?.commValue??DB.settings.defaultCommission)/100);
+  }
+  
   const ownerShare = totalIncome - dhCommission;
   const paymentDue = ownerShare - personalExp;
 
-  const pay = DB.payments.find(p=>p.flatId===flatId && p.month===month) || {};
-  const dollarPayment = Number(pay.dollarPayment)||0;
-  const dollarRate = Number(pay.dollarRate)||0;
-  const totalPaymentBDT = dollarPayment>0 ? dollarPayment*dollarRate : paymentDue;
-  const actualPayment = pay.actualPayment!==undefined && pay.actualPayment!=='' ? Number(pay.actualPayment) : totalPaymentBDT;
-  const advanceOrDue = actualPayment - totalPaymentBDT;
-
-  return {flat, totalRent, commonExp, personalExp, totalIncome, commPct, dhCommission, ownerShare, paymentDue, dollarPayment, dollarRate, totalPaymentBDT, actualPayment, advanceOrDue, comments: pay.comments||''};
+  return {flat, totalRent, commonExp, personalExp, totalIncome, dhCommission, ownerShare, paymentDue};
 }
 
 function renderOwnerReport(){
   ctx.entryMonth = ctx.entryMonth || curMonth();
   ctx.entryFlat = ctx.entryFlat || (DB.flats[0]?DB.flats[0].id:null);
   const month = ctx.entryMonth, flatId = ctx.entryFlat;
-  if(DB.flats.length===0){
-    return `<div class="card"><div class="card-body">${emptyState('dollar','No flats yet','Add flats and entries first.')}</div></div>`;
-  }
+  if(DB.flats.length===0) return `<div class="card"><div class="card-body">Add a flat first.</div></div>`;
+  
   const r = computeOwnerReport(flatId, month);
-
-  const history = [];
-  const monthsWithData = [...new Set(DB.entries.filter(e=>e.flatId===flatId).map(e=>e.month))].sort();
-  monthsWithData.forEach(m=>{ if(m<=month) history.push(computeOwnerReport(flatId, m)); });
+  const commLbl = r.flat && r.flat.commType === 'fixed' ? 'Fixed Tk ' + fmt(r.flat.commValue) : (r.flat?.commValue??DB.settings.defaultCommission) + '%';
 
   return `
   <div class="card">
     <div class="card-head">
       <h3>Owner Payment Report</h3>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;align-items:center;">
         <select style="width:auto;min-width:220px;" onchange="ctx.entryFlat=this.value; render();">
           ${DB.flats.map(f=>`<option value="${f.id}" ${f.id===flatId?'selected':''}>${esc(f.name)}</option>`).join('')}
         </select>
@@ -2162,116 +1681,26 @@ function renderOwnerReport(){
           <div class="month-label">${monthLabel(month)}</div>
           <button class="icon-btn" onclick="ctx.entryMonth=shiftMonth(ctx.entryMonth,1); render();">›</button>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="openPaymentDetailForm('${flatId}','${month}')">Dollar / Payment Detail</button>
-        <button class="btn btn-dark btn-sm" onclick="printOwnerReport()">${ICONS.print} Print</button>
+        <button class="btn btn-dark btn-sm" onclick="printHTML(document.getElementById('or_print').innerHTML)">Print</button>
       </div>
     </div>
-    <div class="card-body">
-      <div id="ownerReportPrintArea">
-        <div style="margin-bottom:14px;">
-          <div style="font-family:'Poppins';font-weight:800;font-size:16px;">${r.flat?esc(r.flat.name):''}</div>
-          <div class="hint">Month of ${monthLabel(month)} &nbsp;•&nbsp; Commission: ${r.commPct}%</div>
-        </div>
-        <div class="tbl-wrap"><table>
-          <thead><tr>
-            <th>Particulars</th><th class="num">Total Rent</th><th class="num">Common Exp.</th><th class="num">Total Income</th>
-            <th class="num">DhakaHome ${r.commPct}%</th><th class="num">Owner ${100-r.commPct}%</th><th class="num">Personal Exp.</th><th class="num">Payment Due</th>
-          </tr></thead>
-          <tbody>
-            <tr>
-              <td>${monthLabel(month)}</td>
-              <td class="num">${fmt(r.totalRent)}</td>
-              <td class="num">${fmt(r.commonExp)}</td>
-              <td class="num">${fmt(r.totalIncome)}</td>
-              <td class="num">${fmt(r.dhCommission)}</td>
-              <td class="num">${fmt(r.ownerShare)}</td>
-              <td class="num">${fmt(r.personalExp)}</td>
-              <td class="num" style="font-weight:800;">${fmt(r.paymentDue)}</td>
-            </tr>
-          </tbody>
-        </table></div>
-
-        <div class="rgrid" style="margin-top:18px;">
-          <div class="box">
-            <h4>Dollar Payment (if applicable)</h4>
-            <div class="row"><span>Dollar Payment to Owner</span><b>$${fmt(r.dollarPayment)}</b></div>
-            <div class="row"><span>Dollar Rate (BDT)</span><b>Tk ${fmt(r.dollarRate)}</b></div>
-            <div class="row"><span>Total Payment (BDT)</span><b>Tk ${fmt(r.totalPaymentBDT)}</b></div>
-          </div>
-          <div class="box">
-            <h4>Actual Settlement</h4>
-            <div class="row"><span>Actual Payment</span><b>Tk ${fmt(r.actualPayment)}</b></div>
-            <div class="row"><span>Advance / Due</span><b style="color:${r.advanceOrDue<0?'var(--red)':'var(--green)'}">${r.advanceOrDue<0?'Due Tk '+fmt(Math.abs(r.advanceOrDue)):'Advance Tk '+fmt(r.advanceOrDue)}</b></div>
-            <div class="row"><span>Comments</span><b>${esc(r.comments||'—')}</b></div>
-          </div>
-        </div>
-
-        <h3 style="margin:22px 0 10px;font-size:14.5px;">Up to ${monthLabel(month)} — History</h3>
-        <div class="tbl-wrap"><table>
-          <thead><tr><th>Month</th><th class="num">Rent</th><th class="num">Common Exp.</th><th class="num">Income</th><th class="num">DH ${r.commPct}%</th><th class="num">Owner Share</th><th class="num">Personal Exp.</th><th class="num">Due</th><th class="num">Actual Paid</th></tr></thead>
-          <tbody>
-          ${history.length===0? `<tr><td colspan="9" class="hint" style="text-align:center;padding:20px;">No data</td></tr>` :
-            history.map((h,i)=>`<tr>
-              <td>${monthLabel(monthsWithData[i])}</td>
-              <td class="num">${fmt(h.totalRent)}</td><td class="num">${fmt(h.commonExp)}</td><td class="num">${fmt(h.totalIncome)}</td>
-              <td class="num">${fmt(h.dhCommission)}</td><td class="num">${fmt(h.ownerShare)}</td><td class="num">${fmt(h.personalExp)}</td>
-              <td class="num">${fmt(h.paymentDue)}</td><td class="num">${fmt(h.actualPayment)}</td>
-            </tr>`).join('')
-          }
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>Total</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.totalRent,0))}</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.commonExp,0))}</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.totalIncome,0))}</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.dhCommission,0))}</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.ownerShare,0))}</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.personalExp,0))}</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.paymentDue,0))}</td>
-              <td class="num">${fmt(history.reduce((s,h)=>s+h.actualPayment,0))}</td>
-            </tr>
-          </tfoot>
-        </table></div>
+    <div class="card-body" id="or_print">
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:800;">${r.flat?esc(r.flat.name):''}</div>
+        <div class="hint">Comm: ${commLbl}</div>
       </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Rent</th><th>Common Exp.</th><th>Net Income</th><th>DH Comm.</th><th>Owner Share</th><th>Personal Exp.</th><th>Payment Due</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>${fmt(r.totalRent)}</td><td>${fmt(r.commonExp)}</td><td>${fmt(r.totalIncome)}</td>
+            <td>${fmt(r.dhCommission)}</td><td>${fmt(r.ownerShare)}</td><td>${fmt(r.personalExp)}</td>
+            <td style="font-weight:800;">${fmt(r.paymentDue)}</td>
+          </tr>
+        </tbody>
+      </table></div>
     </div>
   </div>`;
-}
-function printOwnerReport(){
-  const area = document.getElementById('ownerReportPrintArea');
-  const holder = document.createElement('div'); holder.id='printArea'; holder.innerHTML = `<div style="padding:10px;">${area.innerHTML}</div>`;
-  document.body.appendChild(holder);
-  window.print();
-  setTimeout(()=>document.body.removeChild(holder), 500);
-}
-function openPaymentDetailForm(flatId, month){
-  const pay = DB.payments.find(p=>p.flatId===flatId && p.month===month) || {};
-  openModal(`
-    <div class="modal-head"><h3>Dollar Payment / Settlement Detail</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="hint" style="margin-bottom:12px;">${monthLabel(month)} — If the owner is paid in USD, enter it below. Leave blank to use the calculated BDT payment due.</div>
-      <div class="field-row">
-        <div class="field"><label>Dollar Payment to Owner ($)</label><input id="p_dollar" type="number" value="${pay.dollarPayment||''}"></div>
-        <div class="field"><label>Dollar Rate (in BDT)</label><input id="p_rate" type="number" value="${pay.dollarRate||''}"></div>
-      </div>
-      <div class="field"><label>Actual Payment Made (Tk) — leave blank to use calculated value</label><input id="p_actual" type="number" value="${pay.actualPayment!==undefined?pay.actualPayment:''}"></div>
-      <div class="field"><label>Comments</label><textarea id="p_comment" rows="2" placeholder="e.g. Paid to owner's bank account">${esc(pay.comments||'')}</textarea></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="savePaymentDetail('${flatId}','${month}')">Save</button>
-    </div>
-  `);
-}
-function savePaymentDetail(flatId, month){
-  const dollarPayment = document.getElementById('p_dollar').value;
-  const dollarRate = document.getElementById('p_rate').value;
-  const actualPayment = document.getElementById('p_actual').value;
-  const comments = document.getElementById('p_comment').value.trim();
-  let pay = DB.payments.find(p=>p.flatId===flatId && p.month===month);
-  const data = {flatId, month, dollarPayment: dollarPayment===''?0:Number(dollarPayment), dollarRate: dollarRate===''?0:Number(dollarRate), actualPayment: actualPayment===''?'':Number(actualPayment), comments};
-  if(pay){ Object.assign(pay, data); } else { DB.payments.push(data); }
-  persist('payments'); closeModal(); render(); toast('Payment detail saved');
 }
 
 /* ================= SETTINGS ================= */
@@ -2279,233 +1708,27 @@ function renderSettings(){
   const s = DB.settings;
   return `
   <div class="card" style="max-width:640px;">
-    <div class="card-head"><h3>Company Information</h3></div>
+    <div class="card-head"><h3>Company Info</h3></div>
     <div class="card-body">
       <div class="field"><label>Company Name</label><input id="s_name" value="${esc(s.companyName)}"></div>
-      <div class="field-row">
-        <div class="field"><label>Email</label><input id="s_email" value="${esc(s.email)}"></div>
-        <div class="field"><label>Website</label><input id="s_web" value="${esc(s.website)}"></div>
-      </div>
-      <div class="field"><label>Address</label><input id="s_addr" value="${esc(s.address)}"></div>
       <div class="field"><label>Default Commission (%)</label><input id="s_comm" type="number" value="${s.defaultCommission}"></div>
       <button class="btn btn-primary" onclick="saveSettings()">Save</button>
     </div>
-  </div>
-
-  <div class="card" style="max-width:640px;margin-top:16px;">
-    <div class="card-head"><h3>Default Expense Particulars</h3></div>
-    <div class="card-body">
-      <p class="hint" style="margin-bottom:10px;">These show as quick suggestions when typing "Particulars" in Income & Expense Entry.</p>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
-        ${(s.particulars||[]).map((p,i)=>`<span class="badge" style="background:#F0EFEC;color:var(--ink);">${esc(p)} <button class="close-x" style="width:16px;height:16px;color:var(--red);" onclick="removeParticular(${i})">✕</button></span>`).join('') || '<span class="hint">None yet</span>'}
-      </div>
-      <div style="display:flex;gap:8px;">
-        <input id="s_newPart" placeholder="e.g. Wifi Bill" style="flex:1;">
-        <button class="btn btn-ghost" onclick="addParticular()">${ICONS.plus} Add</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card" style="max-width:640px;margin-top:16px;">
-    <div class="card-head"><h3>☁ Cloud Sync & Backup</h3></div>
-    <div class="card-body">
-      <p class="hint" style="font-size:13px;line-height:1.6;margin-bottom:12px;">
-        ✅ আপনার সমস্ত ডেটা Firebase Cloud-এ স্বয়ংক্রিয়ভাবে সংরক্ষিত হচ্ছে। যেকোনো ডিভাইস থেকে লগিন করুন — সব ডেটা sync থাকবে।
-      </p>
-      <div style="background:#E7F6EC;border-radius:8px;padding:12px 14px;margin-bottom:14px;border:1px solid #b2dfdb;">
-        <div style="font-size:13px;font-weight:700;color:#1E8E3E;">🔥 Firebase Real-time Sync Active</div>
-        <div class="hint" style="margin-top:4px;">অফিস বা বাসা — যেকোনো জায়গা থেকে entry দিন, সাথে সাথে sync হবে।</div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-dark" onclick="exportBackup()">⬇ JSON Backup Download</button>
-        <label class="btn btn-ghost" style="cursor:pointer;">⬆ Restore from Backup <input type="file" accept=".json" onchange="importBackup(event)" style="display:none;"></label>
-      </div>
-      <div style="margin-top:12px;display:none" id="fakeFsSection">
-      </div>
-    </div>
   </div>`;
 }
-function cleanupUnlinkedData(){
-  const flatIds = new Set(DB.flats.map(f=>f.id));
-  const orphanEntries = DB.entries.filter(e=>!flatIds.has(e.flatId));
-  const orphanCleanings = DB.cleanings.filter(c=>!flatIds.has(c.flatId));
-  const orphanGuests = DB.guests.filter(g=>!flatIds.has(g.flatId));
-  const orphanPayments = DB.payments.filter(p=>!flatIds.has(p.flatId));
-  const remainingGuestIds = new Set(DB.guests.filter(g=>flatIds.has(g.flatId)).map(g=>g.id));
-  const orphanGuestPayments = DB.guestPayments.filter(gp=>!remainingGuestIds.has(gp.guestId));
-  const total = orphanEntries.length + orphanCleanings.length + orphanGuests.length + orphanPayments.length + orphanGuestPayments.length;
-  if(total===0){ toast('No unlinked data found — everything is clean'); return; }
-  const ok = confirm(`Found ${total} unlinked record(s) belonging to flats/guests that no longer exist:\n• ${orphanEntries.length} income/expense entries\n• ${orphanCleanings.length} cleaning records\n• ${orphanGuests.length} guest records\n• ${orphanPayments.length} owner payment records\n• ${orphanGuestPayments.length} guest payment records\n\nRemove them permanently? This cannot be undone.`);
-  if(!ok) return;
-  DB.entries = DB.entries.filter(e=>flatIds.has(e.flatId));
-  DB.cleanings = DB.cleanings.filter(c=>flatIds.has(c.flatId));
-  DB.guests = DB.guests.filter(g=>flatIds.has(g.flatId));
-  DB.payments = DB.payments.filter(p=>flatIds.has(p.flatId));
-  DB.guestPayments = DB.guestPayments.filter(gp=>remainingGuestIds.has(gp.guestId));
-  persist();
-  render(); toast('Unlinked data removed');
-}
-function fullResetAllData(){
-  const step1 = confirm('⚠ FULL RESET\n\nThis will permanently delete ALL flats, guests, bookings, income/expense entries, cleaning records, and owner payment records.\n\nCompany Settings (name, email, particulars) will be kept.\n\nThis CANNOT be undone. Continue?');
-  if(!step1) return;
-  const step2 = confirm('Please confirm one more time — ALL accounting data will be permanently erased from this browser. Continue?');
-  if(!step2) return;
-  DB.flats = []; DB.guests = []; DB.entries = []; DB.payments = []; DB.cleanings = []; DB.guestPayments = [];
-  persist();
-  goTo('dashboard');
-  toast('All data has been reset','err');
-}
+
 function saveSettings(){
-  DB.settings.companyName = document.getElementById('s_name').value.trim();
-  DB.settings.email = document.getElementById('s_email').value.trim();
-  DB.settings.website = document.getElementById('s_web').value.trim();
-  DB.settings.address = document.getElementById('s_addr').value.trim();
+  DB.settings.companyName = document.getElementById('s_name').value;
   DB.settings.defaultCommission = Number(document.getElementById('s_comm').value)||20;
-  persist('settings'); toast('Settings saved'); render();
-}
-
-function addParticular(){
-  const v = document.getElementById('s_newPart').value.trim();
-  if(!v) return;
-  DB.settings.particulars = DB.settings.particulars||[];
-  if(!DB.settings.particulars.includes(v)) DB.settings.particulars.push(v);
-  persist('settings'); render(); toast('Added');
-}
-function removeParticular(i){
-  DB.settings.particulars.splice(i,1);
-  persist('settings'); render(); toast('Removed','err');
-}
-
-/* ================= BACKUP / RESTORE (auto-folder via File System Access API) ================= */
-const IDB_NAME = 'dh_fs_handles', IDB_STORE = 'handles';
-let backupDirInfo = {name:null};
-function fsApiSupported(){ return typeof window.showDirectoryPicker === 'function'; }
-function idbOpen(){
-  return new Promise((res,rej)=>{
-    const req = indexedDB.open(IDB_NAME, 1);
-    req.onupgradeneeded = ()=> req.result.createObjectStore(IDB_STORE);
-    req.onsuccess = ()=> res(req.result);
-    req.onerror = ()=> rej(req.error);
-  });
-}
-async function idbGet(key){
-  const db = await idbOpen();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(IDB_STORE,'readonly');
-    const r = tx.objectStore(IDB_STORE).get(key);
-    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
-  });
-}
-async function idbSet(key,val){
-  const db = await idbOpen();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(IDB_STORE,'readwrite');
-    tx.objectStore(IDB_STORE).put(val,key);
-    tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error);
-  });
-}
-// On load, just peek at the stored handle's name (doesn't need permission / doesn't prompt).
-if(fsApiSupported()){
-  idbGet('backupDir').then(h=>{ if(h){ backupDirInfo.name = h.name; if(currentPage==='settings') render(); } }).catch(()=>{});
-}
-async function chooseBackupFolder(){
-  if(!fsApiSupported()){ toast('Your browser does not support this — use Chrome or Edge on desktop','err'); return; }
-  try{
-    const handle = await window.showDirectoryPicker({mode:'readwrite'});
-    await idbSet('backupDir', handle);
-    backupDirInfo.name = handle.name;
-    toast('Backup folder set: '+handle.name);
-    render();
-  }catch(e){ /* user cancelled the picker — do nothing */ }
-}
-async function getBackupDirHandle(){
-  try{
-    const handle = await idbGet('backupDir');
-    if(!handle) return null;
-    const opts = {mode:'readwrite'};
-    let perm = await handle.queryPermission(opts);
-    if(perm!=='granted') perm = await handle.requestPermission(opts);
-    if(perm!=='granted') return null;
-    backupDirInfo.name = handle.name;
-    return handle;
-  }catch(e){ return null; }
-}
-async function exportBackup(){
-  const payload = {exportedAt: new Date().toISOString(), ...DB};
-  const json = JSON.stringify(payload, null, 2);
-  const filename = `dhakahome-backup.json`;
-
-  if(fsApiSupported()){
-    const dirHandle = await getBackupDirHandle();
-    if(dirHandle){
-      try{
-        const fileHandle = await dirHandle.getFileHandle(filename, {create:true});
-        const writable = await fileHandle.createWritable();
-        await writable.write(json);
-        await writable.close();
-        toast(`Backup auto-saved to "${dirHandle.name}" folder`);
-        return;
-      }catch(e){
-        console.error(e);
-        toast('Could not write to the backup folder — downloading instead','err');
-      }
-    }
-  }
-  // Fallback: normal browser download (also used if no folder chosen yet, or on unsupported browsers)
-  const blob = new Blob([json], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  toast('Backup downloaded');
-}
-function importBackup(evt){
-  const file = evt.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    try{
-      const data = JSON.parse(e.target.result);
-      if(!confirm('This will replace current data. Continue?')) return;
-      DB.flats = data.flats||[]; DB.guests = data.guests||[]; DB.entries = data.entries||[]; DB.payments = data.payments||[]; DB.cleanings = data.cleanings||[]; DB.guestPayments = data.guestPayments||[]; DB.settings = data.settings||DB.settings;
-      persist(); render(); toast('Backup restored successfully');
-    }catch(err){ toast('Invalid backup file','err'); }
-  };
-  reader.readAsText(file);
-  evt.target.value = '';
-}
-
-/* ================= UTIL ================= */
-function esc(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function emptyState(icon, title, sub){
-  return `<div class="empty">${ICONS[icon]?.replace('currentColor','#c9c8c4')||''}<div class="t">${title}</div><div>${sub}</div></div>`;
-}
-function bindPageEvents(){ /* reserved for future direct bindings */ }
-
-/* ================= SEED DEMO (only once, ever — never re-seeds after user deletes it) ================= */
-function seedIfEmpty(){
-  if(DB.flats.length>0) return; // don't seed on top of real data
-  const flatId = uid();
-  DB.flats.push({id:flatId, name:'House-149, Road-08, Block-D, Bashundhara R/A', address:'Bashundhara Residential Area, Dhaka', baseRent:65000, commissionPct:20, status:'Available', notes:'Demo flat — feel free to edit or delete.'});
-  const m = curMonth();
-  const d1 = curMonth()+'-05';
-  DB.entries.push(
-    {id:uid(), flatId, date:d1, month:m, particular:'Rent received (30 days)', type:'rent', amount:65000},
-    {id:uid(), flatId, date:d1, month:m, particular:'Service charge', type:'common', amount:5000},
-    {id:uid(), flatId, date:d1, month:m, particular:'Gas & Garbage bill', type:'common', amount:1380},
-    {id:uid(), flatId, date:d1, month:m, particular:'Rental commission', type:'common', amount:3000},
-  );
-  DB.cleanings.push({id:uid(), flatId, date: todayISO(), cleanerName:'Rahima Begum', notes:'Demo cleaning record — edit or delete.'});
-  persist();
+  persist('settings'); toast('Saved'); render();
 }
 
 /* ================= INIT ================= */
-// Session check on page load
 window.addEventListener('load', ()=>{
   if(!checkSession()){
     document.getElementById('loginScreen').classList.remove('hidden');
   }
 });
-
 </script>
 </body>
 </html>
