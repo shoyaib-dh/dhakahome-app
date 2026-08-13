@@ -808,7 +808,7 @@ function guestPaymentTypeLabel(p){
   if(p.type==='advance') return 'Advance';
   if(p.type==='rent') return 'Rent Payment';
   if(p.type==='adjustment') return 'Advance → Rent';
-  if(p.type==='other') return esc(p.note || 'Other');
+  if(p.type==='other') return 'Others';
   return 'Payment';
 }
 // Cash actually received from the guest (initial advance at booking + later advance/rent payments). Adjustments move money already received from "advance" to "rent" and are not new cash.
@@ -1863,6 +1863,7 @@ function openReceipt(id){
           <tbody>
             <tr><td>${g.rentType==='monthly'?`Rent (${(days/30).toFixed(1)} months x ${guestRateLabel(g)})`:`Rent (${days} days x Tk ${fmt(g.perDayRate)})`}</td><td style="text-align:right;">Tk ${fmt(g.rentType==='monthly'?Math.round((Number(g.monthlyRate)||0)*(days/30)):days*Number(g.perDayRate||0))}</td></tr>
             ${Number(g.serviceCharge||0)>0? `<tr><td>Service Charge</td><td style="text-align:right;">Tk ${fmt(g.serviceCharge)}</td></tr>` : ''}
+            <tr style="font-weight:700;border-top:1.5px solid var(--black);"><td>Total Bill</td><td style="text-align:right;">Tk ${fmt(total)}</td></tr>
           </tbody>
         </table>
         <div style="margin-top:18px;">
@@ -1883,13 +1884,12 @@ function openReceipt(id){
                   <td>${esc(p.note||'—')}</td>
                   <td style="text-align:right;">Tk ${fmt(p.amount)}</td>
                 </tr>`).join('')}
+              <tr style="font-weight:700;border-top:1.5px solid var(--black);"><td colspan="3">Total Received</td><td style="text-align:right;">Tk ${fmt(guestTotalReceived(g))}</td></tr>
             </tbody>
           </table>
         </div>
         <div class="rtotal">
           <table>
-            <tr><td>Total Bill</td><td style="text-align:right;">Tk ${fmt(total)}</td></tr>
-            <tr><td>Total Received</td><td style="text-align:right;">Tk ${fmt(guestTotalReceived(g))}</td></tr>
             <tr class="grand"><td>Balance Due</td><td style="text-align:right;">Tk ${fmt(due)}</td></tr>
           </table>
         </div>
