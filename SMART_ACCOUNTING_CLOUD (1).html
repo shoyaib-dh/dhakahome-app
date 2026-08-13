@@ -803,10 +803,18 @@ function guestRateLabel(g){
 function guestLedger(guestId){
   return DB.guestPayments.filter(p=>p.guestId===guestId).sort((a,b)=>a.date.localeCompare(b.date));
 }
+// Human-readable label for a payment row. "Other" type shows the note itself as the label.
+function guestPaymentTypeLabel(p){
+  if(p.type==='advance') return 'Advance';
+  if(p.type==='rent') return 'Rent Payment';
+  if(p.type==='adjustment') return 'Advance → Rent';
+  if(p.type==='other') return esc(p.note || 'Other');
+  return 'Payment';
+}
 // Cash actually received from the guest (initial advance at booking + later advance/rent payments). Adjustments move money already received from "advance" to "rent" and are not new cash.
 function guestTotalReceived(g){
   const ledger = guestLedger(g.id);
-  const later = ledger.filter(p=>p.type==='advance'||p.type==='rent').reduce((s,p)=>s+Number(p.amount),0);
+  const later = ledger.filter(p=>p.type==='advance'||p.type==='rent'||p.type==='other').reduce((s,p)=>s+Number(p.amount),0);
   return Number(g.advancePaid||0) + later;
 }
 // Portion of total-received that has been counted against rent (rent-type payments + adjustments from advance)
@@ -1855,7 +1863,6 @@ function openReceipt(id){
           <tbody>
             <tr><td>${g.rentType==='monthly'?`Rent (${(days/30).toFixed(1)} months x ${guestRateLabel(g)})`:`Rent (${days} days x Tk ${fmt(g.perDayRate)})`}</td><td style="text-align:right;">Tk ${fmt(g.rentType==='monthly'?Math.round((Number(g.monthlyRate)||0)*(days/30)):days*Number(g.perDayRate||0))}</td></tr>
             ${Number(g.serviceCharge||0)>0? `<tr><td>Service Charge</td><td style="text-align:right;">Tk ${fmt(g.serviceCharge)}</td></tr>` : ''}
-            <tr><td>Total Received (Advance + Payments)</td><td style="text-align:right;">− Tk ${fmt(guestTotalReceived(g))}</td></tr>
           </tbody>
         </table>
         <div style="margin-top:18px;">
@@ -1872,7 +1879,7 @@ function openReceipt(id){
               ${ledger.length===0 && Number(g.advancePaid||0)===0? `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);">No payments recorded yet</td></tr>` :
                 ledger.map(p=>`<tr>
                   <td>${niceDate(p.date)}</td>
-                  <td>${p.type==='advance'?'Advance':p.type==='rent'?'Rent Payment':'Advance → Rent'}</td>
+                  <td>${guestPaymentTypeLabel(p)}</td>
                   <td>${esc(p.note||'—')}</td>
                   <td style="text-align:right;">Tk ${fmt(p.amount)}</td>
                 </tr>`).join('')}
@@ -1999,7 +2006,7 @@ function openGuestLedger(id){
         ${ledger.length===0? `<tr><td colspan="5" class="hint" style="text-align:center;padding:16px;">No payments recorded yet — booking advance: Tk ${fmt(g.advancePaid||0)}</td></tr>` :
           ledger.map(p=>`<tr>
             <td>${niceDate(p.date)}</td>
-            <td>${p.type==='advance'?'Advance':p.type==='rent'?'Rent Payment':'Advance → Rent'}</td>
+            <td>${guestPaymentTypeLabel(p)}</td>
             <td class="num">Tk ${fmt(p.amount)}</td>
             <td>${esc(p.note||'—')}</td>
             <td style="text-align:right;white-space:nowrap;">
@@ -2037,6 +2044,7 @@ function openAddGuestPayment(guestId){
           <option value="rent">Rent Payment (new cash, counted against bill)</option>
           <option value="advance">Additional Advance (new cash, held on account)</option>
           <option value="adjustment">Adjust Advance → Rent (no new cash)</option>
+          <option value="other">Others (shown as your note below)</option>
         </select>
         <div id="gp_advHint" class="hint" style="display:none;margin-top:5px;">Available advance to adjust: Tk ${fmt(avail)}</div>
       </div>
@@ -2057,6 +2065,7 @@ function saveGuestPayment(guestId){
   const amount = Number(document.getElementById('gp_amount').value);
   const note = document.getElementById('gp_note').value.trim();
   if(!date || !amount){ toast('Please fill date and amount','err'); return; }
+  if(type==='other' && !note){ toast('Please add a note — it will be shown as the payment type for "Others"','err'); return; }
   if(type==='adjustment'){
     const avail = guestAvailableAdvance(g);
     if(amount > avail){ toast(`Only Tk ${fmt(avail)} of advance is available to adjust`,'err'); return; }
@@ -2087,7 +2096,7 @@ function openGuestPaymentReceipt(paymentId){
   const g = DB.guests.find(x=>x.id===p.guestId); if(!g) return;
   const f = DB.flats.find(x=>x.id===g.flatId);
   const s = DB.settings;
-  const typeLabel = p.type==='advance'?'Additional Advance':p.type==='rent'?'Rent Payment':'Advance Adjusted to Rent';
+  const typeLabel = guestPaymentTypeLabel(p);
   const receiptNo = 'DH-PAY-' + p.id.slice(-6).toUpperCase();
   const due = guestBalanceDue(g);
   const html = `
