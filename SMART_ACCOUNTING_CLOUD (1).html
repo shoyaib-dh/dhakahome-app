@@ -2025,7 +2025,7 @@ function openGuestLedger(id){
 function deleteGuestPayment(paymentId, guestId){
   if(!confirm('Delete this payment record?')) return;
   const p = DB.guestPayments.find(x=>x.id===paymentId);
-  // If this payment auto-created a linked rent entry (advance->rent adjustment), remove that entry too.
+  // If this payment auto-created a linked entry in Income & Expense (rent income), remove that entry too.
   if(p && p.linkedEntryId){
     DB.entries = DB.entries.filter(e=>e.id!==p.linkedEntryId);
   }
@@ -2050,6 +2050,7 @@ function openAddGuestPayment(guestId){
       </div>
       <div class="field"><label>Amount (Tk) *</label><input id="gp_amount" type="number"></div>
       <div class="field"><label>Note</label><input id="gp_note" placeholder="e.g. Monthly rent for August"></div>
+      <div class="hint">"Rent Payment", "Others" and "Adjust Advance → Rent" are automatically added to Income &amp; Expense Entry as Rent Received for this guest's flat. "Additional Advance" is held on the guest's account and is not added until it is later adjusted against rent.</div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -2071,24 +2072,34 @@ function saveGuestPayment(guestId){
     if(amount > avail){ toast(`Only Tk ${fmt(avail)} of advance is available to adjust`,'err'); return; }
   }
   const rec = {id:uid(), guestId, date, type, amount, note};
-  // When advance is adjusted against rent, automatically create a matching
-  // Income & Expense Entry (type: rent) for this guest's flat so it flows
-  // straight into Income & Expense Entry / House Report / Owner Report.
-  if(type==='adjustment' && f){
+  // Any cash actually counted as rent income — a direct Rent Payment, an "Others"
+  // payment, or an advance being adjusted into rent — is automatically pushed into
+  // Income & Expense Entry (type: rent) for this guest's flat, so it flows straight
+  // into Income & Expense Entry / House Report / Owner Report without manual re-entry.
+  // "Additional Advance" is intentionally excluded here — it's cash held on account,
+  // not yet earned rent — and only creates an entry once it's later adjusted (type
+  // 'adjustment'), so nothing gets double counted.
+  const shouldPostToEntries = (type==='rent' || type==='adjustment' || type==='other');
+  if(shouldPostToEntries && f){
     const entryId = uid();
+    const defaultParticular = type==='adjustment'
+      ? `Advance adjusted to rent — ${g.name}`
+      : type==='other'
+        ? (note || `Payment (Others) — ${g.name}`)
+        : `Rent payment — ${g.name}`;
     DB.entries.push({
       id: entryId,
       flatId: f.id,
       date,
       month: date.slice(0,7),
-      particular: note || `Advance adjusted to rent — ${g.name}`,
+      particular: note || defaultParticular,
       type: 'rent',
       amount
     });
     rec.linkedEntryId = entryId;
   }
   DB.guestPayments.push(rec);
-  persist('guestPayments'); persist('entries'); closeModal(); toast('Payment saved');
+  persist('guestPayments'); persist('entries'); closeModal(); toast('Payment saved & added to Income & Expense Entry');
   openGuestPaymentReceipt(rec.id);
 }
 function openGuestPaymentReceipt(paymentId){
